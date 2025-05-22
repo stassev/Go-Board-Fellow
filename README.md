@@ -1,4 +1,5 @@
 # Go Board Fellow 
+Author: Svetlin Tassev
 
 ## Overview  
 A web interface for playing Go with a physical board against computer opponents (GnuGo/KataGo). Key features:  
