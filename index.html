@@ -1,0 +1,841 @@
+<!-- 
+#Copyright (C) Svetlin Tassev
+
+# This file is part of Go Board Fellow
+
+# Go Board Fellow is free software: you can redistribute it and/or modify it under 
+# the terms of the GNU General Public License as published by the Free Software 
+# Foundation, either version 3 of the License, or (at your option) any later version
+
+# Go Board Fellow is distributed in the hope that it will be useful, but WITHOUT 
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details
+
+# You should have received a copy of the GNU General Public License along 
+# with Go Board Fellow. If not, see <https://www.gnu.org/licenses/>.
+
+ -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Go Board Fellow</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+
+        #controls {
+            /* No background or border, just your original padding */
+            padding: 2px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 5px;
+        }
+
+        #controls label,
+        #controls button {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-size: 1rem;
+            padding: 1px 5px;
+            /* your original padding */
+            border: 1.5px solid #222;
+            /* fixed border syntax */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, opacity 0.2s;
+            margin: 0;
+            box-shadow: 0 2px 2px rgba(60, 60, 60, 0.08);
+        }
+
+        #controls label {
+            background: #19b5fe;
+            /* Bolder blue-cyan */
+            color: #fff;
+        }
+
+        #cameraButton {
+            background: #3c40c6;
+            /* Bolder blue */
+            color: #fff;
+        }
+
+        #snapButton {
+            background: #8854d0;
+            /* Bolder purple */
+            color: #fff;
+        }
+
+        #voiceButton {
+            background: #f53b57;
+            /* Bolder pink-red */
+            color: #fff;
+        }
+
+        #caibrateColorsButton {
+            background: #0be881;
+            /* Bolder green */
+            color: #222;
+        }
+
+        #processButton {
+            background: #f7b731;
+            /* Bolder yellow */
+            color: #222;
+        }
+
+        #downloadButton {
+            background: #5758bb;
+            /* Bolder indigo */
+            color: #fff;
+        }
+
+        #controls label:hover,
+        #controls button:hover:not(:disabled) {
+            filter: brightness(0.92);
+            box-shadow: 0 4px 16px rgba(60, 60, 60, 0.14);
+        }
+
+        /* Disabled state for buttons and label */
+        #controls button:disabled,
+        #controls label[aria-disabled="true"] {
+            background: #e0e0e0 !important;
+            color: #a0a0a0 !important;
+            border-color: #cccccc !important;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+        }
+
+        .divider {
+            display: inline-block;
+            width: 1px;
+            height: 1.5em;
+            background: #bbb;
+            margin: 0 6px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Go Board Fellow</h1>
+    <div> <label for="board-size">Board Size:</label>
+        <input type="number" style="width: 4ch;" id="board-size" name="board-size" min="3" max="19" value="9">
+        <label for="player-select">Computer plays</label>
+        <select id="player-select" name="player">
+            <option value="black">Black</option>
+            <option value="white">White</option>
+        </select>
+        at
+        <select id="strength">
+            <option value="1">Level 1 (Weakest)</option>
+            <option value="2">Level 2</option>
+            <option value="3">Level 3</option>
+            <option value="4">Level 4</option>
+            <option value="5">Level 5</option>
+            <option value="6">Level 6</option>
+            <option value="7">Level 7</option>
+            <option value="8">Level 8</option>
+            <option value="9">Level 9</option>
+            <option value="10" selected>Level 10 (Strongest)</option>
+        </select>
+    </div>
+
+    <div id="controls">
+        <input style="display:none;" type="file" id="imageUpload" accept="image/*">
+        <label for="imageUpload" style="user-select: none;">
+            Upload Image
+        </label>&nbsp;or&nbsp;
+        <button id="cameraButton">Take Photo</button>
+        <span class="divider"></span>
+
+        <button id="voiceButton">🎤 Start Listening</button>
+        <button id="caibrateColorsButton">Calibrate colors</button>
+        <button id="processButton" disabled>Process Image</button>
+        <button id="downloadButton" disabled>Download SGF</button>
+    </div>
+    <div>
+
+        <video id="video" width="320" height="240" autoplay style="display:none;"></video>
+        <button id="snapButton" style="display:none;">Capture</button>
+    </div>
+    <div id="nextMoveDisplay"><strong>Next move:</strong> <span id="nextMove"></span></div>
+    <canvas id="canvas" width="800" height="800"></canvas>
+
+
+    <script src="homography.js"></script>
+    <script>
+        let strength = document.getElementById('strength').value;
+
+        document.getElementById('strength').addEventListener('change', function() {
+            strength = this.value;
+            console.log('Strength updated to:', strength);
+            // You can do other things here, like update the UI or preview the strength
+        });
+        var Player = document.getElementById('player-select').value;
+
+        // If you want to update Player when the selection changes:
+        document.getElementById('player-select').addEventListener('change', function() {
+            Player = this.value;
+            // You can now use Player ('black' or 'white') in your code
+            console.log("Selected Player:", Player);
+        });
+        var centers = [];
+        let stream = null;
+        var boardSize = parseInt(document.getElementById('board-size').value, 10);
+
+        // Listen for changes
+        document.getElementById('board-size').addEventListener('change', function() {
+            boardSize = parseInt(this.value, 10);
+            // Now you can use boardSize in your code
+            console.log("Board Size set to:", boardSize);
+        });
+        let image = new Image();
+        let imageData, transformedData;
+        let clickPoints = []; //A19, T19, T1, A1
+        let boardState = {};
+        let blurRadius;
+        const processButton = document.getElementById('processButton');
+        var pointRadius = 5;
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        //let recognition = true;
+        var recognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; // keep listening
+            recognition.lang = 'en-US'; // or your preferred language
+            recognition.interimResults = false; // only act on final results
+        } else {
+            alert('Speech recognition not supported in this browser.');
+        }
+
+        if (recognition) {
+            recognition.onresult = function(event) {
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        const transcript = event.results[i][0].transcript.trim().toLowerCase();
+                        console.log('Heard:', transcript);
+                        if (transcript === "your turn") {
+                            // Trigger the snapButton logic
+                            if (!stream) {
+                                cameraButton.click();
+                            }
+
+                            setTimeout(() => {
+                                snapButton.click();
+                                setTimeout(() => {
+                                    processButton.disabled = false;
+                                    processButton.click();
+                                }, 0)
+                            }, 0)
+                        }
+                    }
+                }
+            };
+            recognition.stop();
+        }
+
+        //recognition.onend = function() {
+        //    if (isListening) {
+        //        // Restart recognition if it stopped unexpectedly
+        //        recognition.start();
+        //    }
+        //};
+        const voiceButton = document.getElementById('voiceButton');
+        let isListening = false;
+        voiceButton.addEventListener('click', () => {
+            if (!isListening) {
+                isListening = true;
+                recognition.start();
+                voiceButton.textContent = "🛑 Stop Listening";
+            } else {
+                isListening = false;
+                recognition.stop();
+                voiceButton.textContent = "🎤 Start Listening";
+            }
+        });
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            // Optionally restart unless stopped by user
+            if (isListening) {
+                recognition.stop();
+                setTimeout(() => {
+                    recognition.start();
+                }, 0);
+
+            }
+        };
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const imageUpload = document.getElementById('imageUpload');
+        const downloadButton = document.getElementById('downloadButton');
+        const caibrateColorsButton = document.getElementById('caibrateColorsButton');
+
+
+        //const processedImage = document.getElementById('processedImage');
+
+
+
+        function getColorAt(imgData, x, y) {
+            const i = (Math.floor(y) * imgData.width + Math.floor(x)) * 4;
+            return [imgData.data[i], imgData.data[i + 1], imgData.data[i + 2]];
+        }
+
+        function colorDistance(c1, c2) {
+            return Math.sqrt(
+                (c1[0] - c2[0]) ** 2 +
+                (c1[1] - c2[1]) ** 2 +
+                (c1[2] - c2[2]) ** 2
+            );
+        }
+
+        function kMeansCluster(pixels, k = 3, iterations = 30) {
+            // 1. Compute brightness sums
+            const a = pixels.map(p => p[0] + p[1] + p[2]);
+            const minA = a.reduce((min, val) => Math.min(min, val), Infinity);
+            const maxA = a.reduce((max, val) => Math.max(max, val), -Infinity);
+            const i_min = a.indexOf(minA);
+            const i_max = a.indexOf(maxA);
+            const midValue = (minA + maxA) / 2;
+            let i_mid = 0,
+                minDiff = Infinity;
+            for (let i = 0; i < a.length; i++) {
+                const diff = Math.abs(a[i] - midValue);
+                if (diff < minDiff && i !== i_min && i !== i_max) {
+                    minDiff = diff;
+                    i_mid = i;
+                }
+            }
+            let centers = [pixels[i_min], pixels[i_mid], pixels[i_max]];
+
+            let labels = new Array(pixels.length);
+            for (let iter = 0; iter < iterations; iter++) {
+                // Assignment
+                for (let i = 0; i < pixels.length; i++) {
+                    let minDist = Infinity,
+                        bestCenter = 0;
+                    for (let j = 0; j < k; j++) {
+                        let dist = colorDistance(pixels[i], centers[j]);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestCenter = j;
+                        }
+                    }
+                    labels[i] = bestCenter;
+                }
+                // Update
+                let newCenters = Array(k).fill(0).map(() => [0, 0, 0, 0]);
+                for (let i = 0; i < pixels.length; i++) {
+                    let label = labels[i];
+                    newCenters[label][0] += pixels[i][0];
+                    newCenters[label][1] += pixels[i][1];
+                    newCenters[label][2] += pixels[i][2];
+                    newCenters[label][3]++;
+                }
+                for (let j = 0; j < k; j++) {
+                    if (newCenters[j][3] > 0) {
+                        centers[j] = [
+                            newCenters[j][0] / newCenters[j][3],
+                            newCenters[j][1] / newCenters[j][3],
+                            newCenters[j][2] / newCenters[j][3]
+                        ];
+                    }
+                }
+            }
+            return centers;
+        }
+
+
+        function classifyStone(color, centers) {
+            let dists = centers.map(c => colorDistance(color, c));
+            let minIndex = dists.indexOf(Math.min(...dists));
+            return minIndex;
+        }
+        var white, black;
+
+        function createSGF(board) {
+            //console.log(board)
+            let sgf = "(;GM[1]FF[4]SZ[" + boardSize.toString() + "]\n";
+            for (let key in board) {
+                let [x, y] = key.split(',').map(Number);
+                let coord = String.fromCharCode(97 + x) + String.fromCharCode(97 + y);
+                if (board[key] === black) {
+                    sgf += `AB[${coord}]\n`;
+                } else if (board[key] === white) {
+                    sgf += `AW[${coord}]\n`;
+                }
+            }
+            sgf += ")";
+            return sgf;
+        }
+        // = Math.max(image.width, image.height) / 600;
+
+        imageUpload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    image.onload = () => {
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        blurRadius = Math.max(image.width, image.height) / 200;
+
+                        // Calculate blur radius as image size / 100 (use the larger of width or height)
+
+
+                        // Set the blur filter
+                        //  ctx.filter = `blur(${blurRadius}px)`;
+
+                        //ctx.drawImage(image, 0, 0);
+
+                        processButton.disabled = false;
+                        redrawAll();
+                    };
+                    image.src = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        const cameraButton = document.getElementById('cameraButton');
+        const video = document.getElementById('video');
+        const snapButton = document.getElementById('snapButton');
+        //const canvas = document.getElementById('canvas');
+        //const ctx = canvas.getContext('2d');
+
+
+
+        cameraButton.addEventListener('click', async () => {
+            // Request camera access
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    if (!stream) {
+                        stream = await navigator.mediaDevices.getUserMedia({
+                            video: true
+                        });
+                    }
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    snapButton.style.display = 'inline-block';
+                } catch (err) {
+                    alert('Camera access denied or not available.');
+                }
+            } else {
+                alert('getUserMedia not supported in this browser.');
+            }
+        });
+
+        snapButton.addEventListener('click', () => {
+            // Draw the current video frame to the canvas
+            const width = video.videoWidth;
+            const height = video.videoHeight;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Optional: set blur filter as in your code
+            blurRadius = Math.max(width, height) / 200;
+            //ctx.filter = `blur(${blurRadius}px)`;
+            ctx.drawImage(video, 0, 0, width, height);
+            //image.src = video.src;
+            ctx.filter = 'none';
+
+            // Hide video and snap button
+            video.style.display = 'none';
+            snapButton.style.display = 'none';
+
+            // Stop the camera stream
+            //if (stream) {
+            //    stream.getTracks().forEach(track => track.stop());
+            //    stream = null;
+            //}
+
+            // Enable your process button, etc.
+            processButton.disabled = false;
+            //clickPoints = [];
+            image.src = canvas.toDataURL();
+            redrawAll();
+        });
+
+
+        function generateLines(n = boardSize) {
+            let lines = [];
+            for (let row = 0; row < n; row++) {
+                for (let col = 0; col < n; col += n - 1) {
+                    lines.push([1 - row / (n - 1), col / (n - 1)]);
+                }
+            }
+
+            for (let col = 0; col < n; col++) {
+                for (let row = 0; row < n; row += n - 1) {
+                    lines.push([1 - row / (n - 1), col / (n - 1)]);
+                }
+            }
+            return lines;
+        }
+
+
+        const src = [
+            [1, 0],
+            [1, 1],
+            [0, 1],
+            [0, 0]
+        ];
+
+        function drawGrid(clickPoints) {
+            const dst = clickPoints; // [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]
+
+            // 3. Compute homography
+            const H = computeHomography(src, dst);
+
+            let gridLines = generateLines();
+            let LinesToDraw = gridLines.map(([u, v]) => applyHomography(H, [u, v]));
+
+            //console.log(LinesToDraw);
+            //ctx.save();
+            ctx.strokeStyle = 'blue'; // or any color you like
+            ctx.lineWidth = 3;
+
+            for (let i = 0; i < LinesToDraw.length; i += 2) {
+                const [x1, y1] = LinesToDraw[i];
+                const [x2, y2] = LinesToDraw[i + 1];
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        let draggingPointIndex = null;
+        let isDragging = false;
+        //const pointRadius = 8; // match your drawing radius
+
+        canvas.addEventListener('click', (e) => {
+            if (clickPoints.length === 4) {
+                //      drawGrid(clickPoints);
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            clickPoints.push([x, y]);
+            ctx.fillStyle = 'rgb(100,100,255)';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fill();
+            if (clickPoints.length === 4) {
+                pointRadius = Math.sqrt((clickPoints[0][0] - clickPoints[2][0]) ** 2 + (clickPoints[0][1] - clickPoints[2][1]) ** 2) / (Math.sqrt(2.) * boardSize) / 4.;
+                //drawGrid(clickPoints);
+                redrawAll();
+            }
+
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (clickPoints.length < 4) return; // Only allow dragging after 4 points
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Check if the click is near any point
+            for (let i = 0; i < clickPoints.length; i++) {
+                const [px, py] = clickPoints[i];
+                const dist = Math.hypot(px - x, py - y);
+                if (dist < pointRadius + 4) { // allow some tolerance
+                    draggingPointIndex = i;
+                    isDragging = true;
+                    break;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging || draggingPointIndex === null) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Update the dragged point
+            clickPoints[draggingPointIndex] = [x, y];
+
+            // Redraw everything
+            redrawAll();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                draggingPointIndex = null;
+                redrawAll();
+            }
+        });
+
+        function getGoCoordinate(x, y, boardSize) {
+            // x: 0-based column index (0 = A, 1 = B, ..., 7 = H, 8 = J, ..., 18 = T)
+            // y: 0-based row index (0 = 1, 1 = 2, ..., 18 = 19)
+            let letters = [];
+            for (let i = 0, code = 65; letters.length < boardSize; code++) {
+                let letter = String.fromCharCode(code);
+                if (letter !== 'I') letters.push(letter);
+            }
+            return letters[x] + (y);
+        }
+
+        function redrawAll() {
+            ctx.drawImage(image, 0, 0);
+            // Draw points
+            let boardX = [0, boardSize - 1, boardSize - 1, 0];
+            let boardY = [boardSize, boardSize, 1, 1];
+            let offset = [
+                [-25, -15],
+                [15, -15],
+                [15, 15],
+                [-25, 25]
+            ];
+            let k = 0;
+            if (clickPoints.length > 0)
+                if (clickPoints.length == 4) pointRadius = Math.sqrt((clickPoints[0][0] - clickPoints[2][0]) ** 2 + (clickPoints[0][1] - clickPoints[2][1]) ** 2) / (Math.sqrt(2.) * boardSize) / 4.;
+            for (const [x, y] of clickPoints) {
+                ctx.fillStyle = 'rgb(100,100,255)';
+                ctx.beginPath();
+                ctx.arc(x, y, pointRadius, 0, 2 * Math.PI);
+                ctx.fill();
+                let label = getGoCoordinate(boardX[k], boardY[k], boardSize);
+
+                // Offset the label (e.g., 10px right and 5px down)
+                ctx.fillStyle = 'rgb(100,100,255)';
+                ctx.font = '20px Arial';
+                ctx.fillText(label, x + offset[k][0], y + offset[k][1]);
+                k++;
+            }
+            // Draw grid if 4 points exist
+            if (clickPoints.length === 4) {
+                drawGrid(clickPoints);
+            }
+        }
+
+
+
+        // Generate normalized grid positions for boardSize x boardSize
+        function generateGridPositions(n = boardSize) {
+            let positions = [];
+            for (let row = 0; row < n; row++) {
+                for (let col = 0; col < n; col++) {
+                    positions.push([1 - row / (n - 1), col / (n - 1)]);
+                }
+            }
+            return positions;
+        }
+
+        var dst;
+
+        caibrateColorsButton.addEventListener('click', () => {
+            dst = clickPoints; // [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]
+
+            ctx.filter = `blur(${blurRadius}px)`;
+            ctx.drawImage(image, 0, 0);
+            setTimeout(() => {
+                const H = computeHomography(src, dst);
+
+                //ctx.restore();
+
+                // 4. Generate normalized grid positions
+                const gridFinePositions = generateGridPositions(n = 256);
+
+                // 5. Map normalized grid to image coordinates
+                const warpedFineGrid = gridFinePositions.map(([u, v]) => applyHomography(H, [u, v]));
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                console.log('Calibrating colors:', centers)
+                const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y));
+                centers = kMeansCluster(colors);
+                ctx.filter = 'none';
+
+                redrawAll();
+            }, 0);
+
+
+
+
+        })
+
+        processButton.addEventListener('click', () => {
+            document.getElementById('nextMove').textContent = '';
+            if (clickPoints.length !== 4) {
+                alert('Please click exactly 4 corners of the Go board.');
+                return;
+            }
+
+            dst = clickPoints; // [[x0, y0], [x1, y1], [x2, y2], [x3, y3]]
+
+            // 3. Compute homography
+            const H = computeHomography(src, dst);
+
+            //ctx.restore();
+
+            // 4. Generate normalized grid positions
+            const gridPositions = generateGridPositions();
+            const gridFinePositions = generateGridPositions(n = boardSize * 10);
+
+            // 5. Map normalized grid to image coordinates
+            const warpedGrid = gridPositions.map(([u, v]) => applyHomography(H, [u, v]));
+            const warpedFineGrid = gridFinePositions.map(([u, v]) => applyHomography(H, [u, v]));
+
+            //console.log(clickPoints);
+            //console.log(warpedGrid)
+            ctx.filter = `blur(${blurRadius}px)`;
+
+            ctx.drawImage(image, 0, 0);
+
+            setTimeout(() => {
+
+                imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                //   const { centers } = kMeansCluster(imageData);
+
+                //console.log('c',colors,imageData)
+                // 2. Run kMeansCluster on these colors
+
+                if (centers.length != 3) {
+                    console.log('Calibrating colors:', centers)
+                    const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y));
+                    centers = kMeansCluster(colors);
+                }
+
+                function norm(xx) {
+                    return Math.sqrt(xx.reduce((sum, x) => sum + x, 0))
+                }
+                let mag = [norm(centers[0]), norm(centers[1]), norm(centers[2])]
+                black = mag.indexOf(Math.min(...mag));
+                white = mag.indexOf(Math.max(...mag));
+                //console.log(centers,black,white)
+                boardState = {};
+                warpedGrid.forEach(([x, y], i) => {
+                    const color = getColorAt(imageData, x, y);
+                    const label = classifyStone(color, centers);
+                    const col = i % boardSize;
+                    const row = Math.floor(i / boardSize);
+                    if (label === black || label === white) {
+                        boardState[`${col},${row}`] = label;
+
+                    }
+                });
+
+
+
+                ctx.filter = 'none';
+
+                redrawAll();
+                warpedGrid.forEach(([x, y], i) => {
+                    const col = i % boardSize;
+                    const row = Math.floor(i / boardSize);
+                    let label = boardState[`${col},${row}`];
+                    if (label === black || label === white) {
+                        ctx.beginPath();
+                        ctx.arc(x, y, pointRadius / 1.2, 0, 2 * Math.PI);
+                        ctx.fillStyle = label === black ? 'red' : 'green';
+                        ctx.fill();
+                        //ctx.filter = `blur(${blurRadius}px)`;
+                    }
+                });
+
+                downloadButton.disabled = false;
+                const sgf = createSGF(boardState);
+                fetch('http://localhost:5000/next-move', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            sgf,
+                            color: Player, // Add this line to specify the color to play
+                            strength: strength // Add this line,
+
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        const nextMove = data.move.slice(2).trim();
+                        // Print the next move to the HTML
+                        document.getElementById('nextMove').textContent = nextMove;
+                        if (nextMove) {
+                            //console.log('nm ',nextMove)
+                            // Split into letter and number
+                            if (nextMove === "resign") {
+                                const resignAudio = new Audio(`audio/resign.wav`);
+                                resignAudio.play();
+                            }
+                            if (nextMove === "PASS") {
+                                const passAudio = new Audio(`audio/pass.wav`);
+                                passAudio.play();
+                            }
+                            const match = nextMove.match(/^([A-Za-z])\s?(\d{1,2})$/);
+                            //console.log(match)
+                            if (match) {
+                                const letter = match[1].toLowerCase(); // e.g., 'k'
+                                const number = match[2]; // e.g., '10'
+                                //console.log('audio',letter,number,`audio/${letter}.wav`,`audio/${number}.wav`)
+                                // Create audio elements for the letter and number
+                                const letterAudio = new Audio(`audio/${letter}.wav`);
+                                const numberAudio = new Audio(`audio/${number}.wav`);
+
+                                // Play letter, then number
+                                letterAudio.onended = () => numberAudio.play();
+                                letterAudio.play();
+                                //console.log('sh')
+                                function letterToCol(letter, boardSize) {
+                                    // Create array of valid letters (skip 'i')
+                                    let letters = [];
+                                    for (let i = 0, code = 97; letters.length < boardSize; code++) { // 97 is 'a'
+                                        let l = String.fromCharCode(code);
+                                        if (l !== 'i') letters.push(l);
+                                    }
+                                    return letters.indexOf(letter.toLowerCase());
+                                }
+
+                                function goCoordsToIndices(letter, number, boardSize) {
+                                    let col = letterToCol(letter, boardSize);
+                                    let row = boardSize - parseInt(number); // 0 at bottom, boardSize-1 at top
+                                    return [row, col];
+                                }
+
+                                // Example usage:
+                                let [row, col] = goCoordsToIndices(letter, number, boardSize);
+
+                                // Now compute normalized board coordinates:
+                                let u = 1 - row / (boardSize - 1);
+                                let v = col / (boardSize - 1);
+                                let [x, y] = applyHomography(H, [u, v]);
+
+                                ctx.beginPath();
+                                ctx.arc(x, y, pointRadius * 1.7, 0, 2 * Math.PI);
+                                ctx.fillStyle = 'yellow';
+                                ctx.fill();
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        document.getElementById('nextMove').textContent = "Error: " + error;
+                    });
+            }, 0);
+
+        });
+
+        downloadButton.addEventListener('click', () => {
+            const sgf = createSGF(boardState);
+            const blob = new Blob([sgf], {
+                type: 'text/plain'
+            });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'board.sgf';
+            link.click();
+        });
+    </script>
+</body>
+
+</html>
