@@ -7,7 +7,11 @@ A web interface for playing Go with a physical board against computer opponents 
 - **Perspective correction** using grid corner calibration  
 - **Voice commands** ("your turn" triggers move calculation)
 - **The calculated next turn is both printed and announced by audio**. Thus, one does not need to look at the screen to see the next move. 
-- **SGF export** -- saves the state of the board.  
+- **SGF export** -- saves the state of the board.
+
+---
+## Screenshot:
+![play_go](https://github.com/user-attachments/assets/373fad56-2739-4d53-9d0e-419ae12cc82e)
 
 ---
 
