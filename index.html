@@ -27,8 +27,8 @@
         }
 
         #controls {
-            /* No background or border, just your original padding */
-            padding: 2px;
+            /*padding: 2px; No background or border, just your original padding */
+            
             display: flex;
             flex-wrap: wrap;
             gap: 2px;
@@ -124,7 +124,9 @@
 
 <body>
     <h1>Go Board Fellow</h1>
-    <div> <label for="board-size">Board Size:</label>
+    <h2>Set up</h2>
+
+    <div> 1. Board Size:
         <input type="number" style="width: 4ch;" id="board-size" name="board-size" min="3" max="19" value="9">
         <label for="player-select">Computer plays</label>
         <select id="player-select" name="player">
@@ -147,24 +149,28 @@
     </div>
 
     <div id="controls">
-        <input style="display:none;" type="file" id="imageUpload" accept="image/*">
+        2. <input style="display:none;" type="file" id="imageUpload" accept="image/*">
         <label for="imageUpload" style="user-select: none;">
             Upload Image
         </label>&nbsp;or&nbsp;
         <button id="cameraButton">Take Photo</button>
-        <span class="divider"></span>
+        <!--span class="divider"></span-->
+</div><div>
+3. Select 4 corners of grid.
+</div><div>
+4.       <button id="caibrateColorsButton">Calibrate colors</button>
+</div>
+<h2>Generate next turn by: <button id="voiceButton">Activating 🎤 and saying "Your turn"</button> or 
+        <button id="processButton" disabled>Pressing this button</button>
+</h2><h2>Save game state: <button id="downloadButton" disabled>Download SGF</button></h2>
 
-        <button id="voiceButton">🎤 Start Listening</button>
-        <button id="caibrateColorsButton">Calibrate colors</button>
-        <button id="processButton" disabled>Process Image</button>
-        <button id="downloadButton" disabled>Download SGF</button>
-    </div>
+    
     <div>
 
         <video id="video" width="320" height="240" autoplay style="display:none;"></video>
         <button id="snapButton" style="display:none;">Capture</button>
     </div>
-    <div id="nextMoveDisplay"><strong>Next move:</strong> <span id="nextMove"></span></div>
+    <h2>Next move: <span id="nextMove"></span></h2> 
     <canvas id="canvas" width="800" height="800"></canvas>
 
 
