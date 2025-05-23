@@ -30,65 +30,82 @@
             /*padding: 2px; No background or border, just your original padding */
             
             display: flex;
-            flex-wrap: wrap;
+            flex-wrap: wrap;/*
             gap: 2px;
+            margin-top: 5px;*/
             align-items: center;
             justify-content: flex-start;
-            margin-top: 5px;
+            
         }
 
         #controls label,
         #controls button {
+            border: 1.5px solid #222;
+            
+            /*padding: 1px 5px;
             font-family: 'Segoe UI', 'Arial', sans-serif;
             font-size: 1rem;
-            padding: 1px 5px;
-            /* your original padding */
-            border: 1.5px solid #222;
-            /* fixed border syntax */
-            border-radius: 5px;
+            
+            margin: 0;
+            border-radius: 5px;*/
             cursor: pointer;
             transition: background 0.2s, color 0.2s, opacity 0.2s;
-            margin: 0;
+            font-size: 11pt;
+            padding:2pt;
             box-shadow: 0 2px 2px rgba(60, 60, 60, 0.08);
         }
 
         #controls label {
             background: #19b5fe;
+            font-size: 11pt;
+            padding:2pt;
             /* Bolder blue-cyan */
             color: #fff;
         }
 
         #cameraButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #3c40c6;
             /* Bolder blue */
             color: #fff;
         }
 
         #snapButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #8854d0;
             /* Bolder purple */
             color: #fff;
         }
 
         #voiceButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #f53b57;
             /* Bolder pink-red */
             color: #fff;
         }
 
         #caibrateColorsButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #0be881;
             /* Bolder green */
             color: #222;
         }
 
         #processButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #f7b731;
             /* Bolder yellow */
             color: #222;
         }
 
         #downloadButton {
+            font-size: 11pt;
+            padding:2pt;
             background: #5758bb;
             /* Bolder indigo */
             color: #fff;
@@ -147,21 +164,21 @@
             <option value="10" selected>Level 10 (Strongest)</option>
         </select>
     </div>
-
+<div>2. Place some white and black stones on the board before capturing image. Necessary for calibration. </div>
     <div id="controls">
-        2. <input style="display:none;" type="file" id="imageUpload" accept="image/*">
+        3.&nbsp; <input style="display:none;" type="file" id="imageUpload" accept="image/*">
         <label for="imageUpload" style="user-select: none;">
             Upload Image
         </label>&nbsp;or&nbsp;
         <button id="cameraButton">Take Photo</button>
         <!--span class="divider"></span-->
 </div><div>
-3. Select 4 corners of grid.
+4. Select 4 corners of grid but beware of perspective distortions when stones are on board. Keep grid aligned with stone centers not grid itself.
 </div><div>
-4.       <button id="caibrateColorsButton">Calibrate colors</button>
+5. Keep stones on the board and <button id="caibrateColorsButton">Calibrate colors</button> 
 </div>
-<h2>Generate next turn by: <button id="voiceButton">Activating 🎤 and saying "Your turn"</button> or 
-        <button id="processButton" disabled>Pressing this button</button>
+<h2>Generate next move: <button id="voiceButton">Activate 🎤 and say "Your turn" (triggers camera capture)</button> or 
+        <button id="processButton" disabled>Press this button</button>
 </h2><h2>Save game state: <button id="downloadButton" disabled>Download SGF</button></h2>
 
     
