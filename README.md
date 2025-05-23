@@ -10,8 +10,11 @@ A web interface for playing Go with a physical board against computer opponents 
 - **SGF export** -- saves the state of the board.
 
 ---
-## Screenshot:
+## Screenshots:
 ![play_go](https://github.com/user-attachments/assets/373fad56-2739-4d53-9d0e-419ae12cc82e)
+
+![19](https://github.com/user-attachments/assets/91bd0fa7-7a43-476a-94d6-d2163b261d1a)
+
 
 ---
 
