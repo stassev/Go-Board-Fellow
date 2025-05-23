@@ -11,8 +11,12 @@ A web interface for playing Go with a physical board against computer opponents 
 
 ---
 ## Screenshots:
-![play_go](https://github.com/user-attachments/assets/373fad56-2739-4d53-9d0e-419ae12cc82e)
+ - This game was played live. Recording was done by my laptop camera.
+ - 
+![play_go](https://github.com/user-attachments/assets/9d6f1953-e20d-4cfe-b55e-a26713be790f)
 
+- The original image is from wikipedia. I ran the code on it.
+- 
 ![19](https://github.com/user-attachments/assets/91bd0fa7-7a43-476a-94d6-d2163b261d1a)
 
 
