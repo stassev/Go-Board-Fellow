@@ -862,23 +862,24 @@ function handleCanvasClick(event) {
     selectedLAB.push(lab);
 
     if (clickStage === 0) {
-        alert("Now click on the BLACK stone.");
+        alert("Now click on the center of a BLACK stone.");
     } else if (clickStage === 1) {
         // Overwrite centers after both clicks
         centers[white] = selectedLAB[0];
         centers[black] = selectedLAB[1];
-        alert("Calibration complete: white and black centers updated.");
+        alert("Calibration complete.");
         canvas.removeEventListener('click', handleCanvasClick); // Optional: remove handler
+          ctx.filter = 'none';
+
+                redrawAll();
     }
     clickStage++;
 }
 
 // Start the process
-alert("Click on the WHITE stone.");
+alert("Click on the center of a blurred WHITE stone.");
 canvas.addEventListener('click', handleCanvasClick);
-                ctx.filter = 'none';
-
-                redrawAll();
+              
             }, 0);
 
 
