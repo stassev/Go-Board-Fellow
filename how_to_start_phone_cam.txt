@@ -1,0 +1,4 @@
+sudo modprobe -r v4l2loopback                                                                                                                                 ✔ 
+sudo modprobe v4l2loopback devices=1 video_nr=2 card_label="Virtual_Webcam" exclusive_caps=1
+scrcpy --v4l2-sink=/dev/video2 --capture-orientation=0 --crop=720:1600:0:0
+chromium --allow-file-access-from-files --use-fake-ui-for-media-stream index.html

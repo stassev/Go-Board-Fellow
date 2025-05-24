@@ -145,7 +145,7 @@
     <h2>Set up</h2>
 
     <div> 1. Board Size:
-        <input type="number" style="width: 4ch;" id="board-size" name="board-size" min="3" max="19" value="9">
+        <input type="number" style="width: 4ch;" id="board-size" name="board-size" min="3" max="19" value="19">
         <label for="player-select">Computer plays</label>
         <select id="player-select" name="player">
             <option value="black">Black</option>
@@ -825,8 +825,57 @@
                 const warpedFineGrid = gridFinePositions.map(([u, v]) => applyHomography(H, [u, v]));
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 console.log('Calibrating colors:', centers)
-                const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y)).map(rgb2lab);;
+                const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y)).map(rgb2lab);
+                //const labStrings = colors.map(([L, a, b]) => `${L},${a*20},${b*20}`);
+
+//// Save as a .txt or .csv file in the browser
+//function saveStrings(list, filename, extension = 'txt') {
+//  const blob = new Blob([list.join('\n')], { type: 'text/plain' });
+//  const a = document.createElement('a');
+//  a.href = URL.createObjectURL(blob);
+//  a.download = `${filename}.${extension}`;
+//  a.click();
+//}
+//
+//saveStrings(labStrings, 'lab_colors1', 'csv');
                 centers = kMeansCluster(colors);
+                                function norm(xx) {
+                    return xx[0]
+                }
+                let mag = [norm(centers[0]), norm(centers[1]), norm(centers[2])]
+                black = mag.indexOf(Math.min(...mag));
+                white = mag.indexOf(Math.max(...mag));
+                let clickStage = 0; // 0: waiting for white, 1: waiting for black, 2: done
+let selectedLAB = [];
+
+function handleCanvasClick(event) {
+    if (clickStage > 1) return; // Only process two clicks
+
+    // Get click coordinates relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.round(event.clientX - rect.left);
+    const y = Math.round(event.clientY - rect.top);
+
+    // Extract LAB value at this pixel
+    const rgb = getColorAt(imageData, x, y);
+    const lab = rgb2lab(rgb);
+    selectedLAB.push(lab);
+
+    if (clickStage === 0) {
+        alert("Now click on the BLACK stone.");
+    } else if (clickStage === 1) {
+        // Overwrite centers after both clicks
+        centers[white] = selectedLAB[0];
+        centers[black] = selectedLAB[1];
+        alert("Calibration complete: white and black centers updated.");
+        canvas.removeEventListener('click', handleCanvasClick); // Optional: remove handler
+    }
+    clickStage++;
+}
+
+// Start the process
+alert("Click on the WHITE stone.");
+canvas.addEventListener('click', handleCanvasClick);
                 ctx.filter = 'none';
 
                 redrawAll();
@@ -840,6 +889,10 @@
             document.getElementById('nextMove').textContent = '';
             if (clickPoints.length !== 4) {
                 alert('Please click exactly 4 corners of the Go board.');
+                return;
+            }
+            if (centers.length !== 3) {
+                alert('Please calibrate colors.');
                 return;
             }
 
@@ -872,18 +925,13 @@
                 //console.log('c',colors,imageData)
                 // 2. Run kMeansCluster on these colors
 
-                if (centers.length != 3) {
-                    console.log('Calibrating colors:', centers)
-                    const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y)).map(rgb2lab);;
-                    centers = kMeansCluster(colors);
-                }
+                //if (centers.length != 3) {
+                //    console.log('Calibrating colors:', centers)
+                //    const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y)).map(rgb2lab);;
+                //    centers = kMeansCluster(colors);
+                //}
 
-                function norm(xx) {
-                    return xx[0]
-                }
-                let mag = [norm(centers[0]), norm(centers[1]), norm(centers[2])]
-                black = mag.indexOf(Math.min(...mag));
-                white = mag.indexOf(Math.max(...mag));
+
                 //console.log(centers,black,white)
                 boardState = {};
                 warpedGrid.forEach(([x, y], i) => {
