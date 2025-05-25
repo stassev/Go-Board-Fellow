@@ -9,16 +9,6 @@ A web interface for playing Go on a physical board against a computer opponent (
 - **The calculated next turn is both printed and announced by audio**. Thus, one does not need to look at the screen to see the next move. 
 - **SGF export** -- saves the state of the board.
 
----
-## Screenshots:
- - This game was played live. Recording was done by my laptop camera.
-
-![play_go](https://github.com/user-attachments/assets/9d6f1953-e20d-4cfe-b55e-a26713be790f)
-
-- The original image is from wikipedia. I ran the code on it.
-  
-![19](https://github.com/user-attachments/assets/91bd0fa7-7a43-476a-94d6-d2163b261d1a)
-
 
 ---
 
@@ -129,3 +119,23 @@ The steps below assume you have done the calibration in the previous step. Do no
 - Camera issues: Check browser camera permissions.
 - Detection errors: Readjust grid to match centers of stones, not grid. They may not perfectly align because of perspective distortions.
 - Engine failures: Verify backend processes are running correctly.
+
+
+---
+## Screenshots:
+ - This game was played live. Recording was done by my laptop camera.
+
+![play_go](https://github.com/user-attachments/assets/9d6f1953-e20d-4cfe-b55e-a26713be790f)
+
+ - The original image is from wikipedia. I ran the code on it.
+  
+![19](https://github.com/user-attachments/assets/91bd0fa7-7a43-476a-94d6-d2163b261d1a)
+
+ - Set-up with phone as camera
+  
+![setup](https://github.com/user-attachments/assets/5aabd32f-e8f7-4c66-ae46-687b9265ca47)
+
+ - Screenshot of Go Board Fellow using phone as camera:
+
+![screen](https://github.com/user-attachments/assets/bc3c8952-afea-46d2-88fb-851a9ce70899)
+
