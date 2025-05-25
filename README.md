@@ -2,7 +2,7 @@
 Author: Svetlin Tassev
 
 ## Overview  
-A web interface for playing Go with a physical board against computer opponents (GnuGo/KataGo). Key features:  
+A web interface for playing Go on a physical board against a computer opponent (GnuGo/KataGo). Key features:  
 - **Board scanning** via camera/image upload  
 - **Perspective correction** using grid corner calibration  
 - **Voice commands** ("your turn" triggers move calculation)
@@ -38,7 +38,7 @@ A web interface for playing Go with a physical board against computer opponents 
 
 2. **Browser**: Chrome/Chromium is required for speech recognition. Other browsers may work but have not been tested.
 
-3. **Audio files**: If you want the next move to be spoken by the browser so you don't have to look at the screen, you have to create a subfolder "audio" and place .wav files for each letter and number corresponding to the board letter/number coordinates. For example, "a.wav", "b.wav",..., "1.wav", "2.wav", ... You can generate those audio files using the script
+3. **Audio files (optional)**: If you want the next move to be spoken by the browser so you don't have to look at the screen, you have to create a subfolder "audio" and place .wav files for each letter and number corresponding to the board letter/number coordinates. For example, "a.wav", "b.wav",..., "1.wav", "2.wav", ... You can generate those audio files using the script
     ```
     python record_letters_numbers.py
     ```
@@ -63,9 +63,25 @@ or
 
 ### **Start Browser**
 
-       chromium --allow-file-access-from-files index.html
+       chromium --allow-file-access-from-files --use-fake-ui-for-media-stream --test-type index.html
    
-   Other browsers work as well but may not support speech recognition.
+   Other browsers work as well but may not support speech recognition. Note that "use-fake-ui-for-media-stream" is used if you are planning on using your phone as a camera.
+
+### **Using Android phone as webcam (optional)**
+
+1. Connect phone with usb cable to computer.
+2. Execute (change parameters as needed):
+
+       sudo modprobe -r v4l2loopback
+       sudo modprobe v4l2loopback devices=1 video_nr=2 card_label="Virtual_Webcam" exclusive_caps=1
+       scrcpy --v4l2-sink=/dev/video2 --capture-orientation=0
+
+3. Start phone camera.
+4. Start Chrome/Chromium with:
+
+       chromium --allow-file-access-from-files --use-fake-ui-for-media-stream --test-type index.html
+       
+5. Select camera from browser from dropdown menu.
 
 ### **Calibration Steps** 
 
@@ -78,7 +94,7 @@ Point your camera at the physical board and start the browser.
    - Bottom-left (A1)
 2. Adjust the positions of the calibration points so that they align with **stone centers**, not grid intersections. Those may not match due to perspective distortions.
 3. Place a few stones of each color on the board to calibrate the colors (black, white, board color)
-4. Click "Calibrate colors". This step would work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board.
+4. Click "Calibrate colors". This step would work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board. The automatic calibration works well for uniformly lit boards. If not, use manual calibration by deselecting the "Automatic calibration" checkbox.
 
 
 
