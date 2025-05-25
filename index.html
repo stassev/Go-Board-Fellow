@@ -169,7 +169,7 @@
     <div id="controls">
         3.&nbsp; <input style="display:none;" type="file" id="imageUpload" accept="image/*">
         <label for="imageUpload" style="user-select: none;">
-            Upload Image
+            Load Image
         </label>&nbsp;or&nbsp;
         choose &nbsp;
         <select id="cameraSelect"></select>
@@ -181,7 +181,10 @@
         4. Select 4 corners of grid but beware of perspective distortions when stones are on board. Keep grid aligned with stone centers not grid itself.
     </div>
     <div>
-        5. <button id="caibrateColorsButton">Calibrate colors</button>
+        5. <button id="caibrateColorsButton">Calibrate colors</button><label style="margin-left:8px;">
+            <input type="checkbox" id="autoCalibrateCheckbox" checked>
+            Automatic calibration?
+        </label>
     </div>
     <div>
         6. Start GnuGo or KataGo backend using python scripts. See Readme.
@@ -203,6 +206,16 @@
 
     <script src="homography.js"></script>
     <script>
+        var lastclick = 3;
+        var clickStage = lastclick; // 0: waiting for white, 1: waiting for black, 2: done
+        let calibrateManual = !document.getElementById('autoCalibrateCheckbox').checked;
+
+        // Listen for changes to the checkbox
+        document.getElementById('autoCalibrateCheckbox').addEventListener('change', function() {
+            calibrateManual = !this.checked;
+            // Optionally, you can log or use calibrateManual here
+        });
+
         function rgb2lab([r, g, b]) {
             // sRGB to XYZ
             function pivotRgb(c) {
@@ -365,24 +378,34 @@
             );
         }
 
-        function kMeansCluster(pixels, k = 3, iterations = 30) {
+        function kMeansCluster(pixels, k = 4, iterations = 100) {
             // 1. Compute brightness sums
             const a = pixels.map(p => p[0]);
             const minA = a.reduce((min, val) => Math.min(min, val), Infinity);
             const maxA = a.reduce((max, val) => Math.max(max, val), -Infinity);
             const i_min = a.indexOf(minA);
             const i_max = a.indexOf(maxA);
-            const midValue = (minA + maxA) / 2;
-            let i_mid = 0,
-                minDiff = Infinity;
+            let midValue = (minA + maxA) / 3;
+            let i_mid1 = 0
+            let minDiff = Infinity;
             for (let i = 0; i < a.length; i++) {
                 const diff = Math.abs(a[i] - midValue);
                 if (diff < minDiff && i !== i_min && i !== i_max) {
                     minDiff = diff;
-                    i_mid = i;
+                    i_mid1 = i;
                 }
             }
-            let centers = [pixels[i_min], pixels[i_mid], pixels[i_max]];
+            midValue = (minA + maxA) * 2 / 3;
+            i_mid2 = 0
+            minDiff = Infinity;
+            for (let i = 0; i < a.length; i++) {
+                const diff = Math.abs(a[i] - midValue);
+                if (diff < minDiff && i !== i_min && i !== i_max) {
+                    minDiff = diff;
+                    i_mid2 = i;
+                }
+            }
+            let centers = [pixels[i_min], pixels[i_mid1], pixels[i_mid2], pixels[i_max]];
 
             let labels = new Array(pixels.length);
             for (let iter = 0; iter < iterations; iter++) {
@@ -691,7 +714,7 @@
 
         canvas.addEventListener('mousedown', (e) => {
             if (clickPoints.length < 4) return; // Only allow dragging after 4 points
-
+            if (clickStage < lastclick) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -709,6 +732,7 @@
         });
 
         canvas.addEventListener('mousemove', (e) => {
+            if (clickStage < lastclick) return;
             if (!isDragging || draggingPointIndex === null) return;
 
             const rect = canvas.getBoundingClientRect();
@@ -723,6 +747,7 @@
         });
 
         canvas.addEventListener('mouseup', () => {
+            if (clickStage < lastclick) return;
             if (isDragging) {
                 isDragging = false;
                 draggingPointIndex = null;
@@ -824,62 +849,87 @@
                 // 5. Map normalized grid to image coordinates
                 const warpedFineGrid = gridFinePositions.map(([u, v]) => applyHomography(H, [u, v]));
                 imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                console.log('Calibrating colors:', centers)
+                console.log('Calibrating colors:')
                 const colors = warpedFineGrid.map(([x, y]) => getColorAt(imageData, x, y)).map(rgb2lab);
                 //const labStrings = colors.map(([L, a, b]) => `${L},${a*20},${b*20}`);
 
-//// Save as a .txt or .csv file in the browser
-//function saveStrings(list, filename, extension = 'txt') {
-//  const blob = new Blob([list.join('\n')], { type: 'text/plain' });
-//  const a = document.createElement('a');
-//  a.href = URL.createObjectURL(blob);
-//  a.download = `${filename}.${extension}`;
-//  a.click();
-//}
-//
-//saveStrings(labStrings, 'lab_colors1', 'csv');
+                //// Save as a .txt or .csv file in the browser
+                //function saveStrings(list, filename, extension = 'txt') {
+                //  const blob = new Blob([list.join('\n')], { type: 'text/plain' });
+                //  const a = document.createElement('a');
+                //  a.href = URL.createObjectURL(blob);
+                //  a.download = `${filename}.${extension}`;
+                //  a.click();
+                //}
+                //
+                //saveStrings(labStrings, 'lab_colors1', 'csv');
                 centers = kMeansCluster(colors);
-                                function norm(xx) {
+
+                function norm(xx) {
                     return xx[0]
                 }
-                let mag = [norm(centers[0]), norm(centers[1]), norm(centers[2])]
+                let mag = [norm(centers[0]), norm(centers[1]), norm(centers[2]), norm(centers[3])]
                 black = mag.indexOf(Math.min(...mag));
                 white = mag.indexOf(Math.max(...mag));
-                let clickStage = 0; // 0: waiting for white, 1: waiting for black, 2: done
-let selectedLAB = [];
 
-function handleCanvasClick(event) {
-    if (clickStage > 1) return; // Only process two clicks
+                if (calibrateManual) {
+                    clickStage = 0;
 
-    // Get click coordinates relative to the canvas
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.round(event.clientX - rect.left);
-    const y = Math.round(event.clientY - rect.top);
+                    let selectedLAB = [];
 
-    // Extract LAB value at this pixel
-    const rgb = getColorAt(imageData, x, y);
-    const lab = rgb2lab(rgb);
-    selectedLAB.push(lab);
+                    function handleCanvasClick(event) {
+                        if (clickStage > lastclick) return; // Only process two clicks
 
-    if (clickStage === 0) {
-        alert("Now click on the center of a BLACK stone.");
-    } else if (clickStage === 1) {
-        // Overwrite centers after both clicks
-        centers[white] = selectedLAB[0];
-        centers[black] = selectedLAB[1];
-        alert("Calibration complete.");
-        canvas.removeEventListener('click', handleCanvasClick); // Optional: remove handler
-          ctx.filter = 'none';
+                        // Get click coordinates relative to the canvas
+                        const rect = canvas.getBoundingClientRect();
+                        const x = Math.round(event.clientX - rect.left);
+                        const y = Math.round(event.clientY - rect.top);
 
-                redrawAll();
-    }
-    clickStage++;
-}
+                        // Extract LAB value at this pixel
+                        const rgb = getColorAt(imageData, x, y);
+                        const lab = rgb2lab(rgb);
+                        selectedLAB.push(lab);
 
-// Start the process
-alert("Click on the center of a blurred WHITE stone.");
-canvas.addEventListener('click', handleCanvasClick);
-              
+                        if (clickStage === 0) {
+                            alert("Now click on the center of a BLACK stone.");
+                        }
+                        if (clickStage === 1) {
+                            alert("Now click brightest part of board.");
+                        }
+                        if (clickStage === 2) {
+                            alert("Now click darkest part of board.");
+                        } else if (clickStage === lastclick) {
+                            // Overwrite centers after both clicks
+                            white = 0;
+                            black = 1;
+
+                            centers[white] = selectedLAB[0];
+                            centers[black] = selectedLAB[1];
+                            centers[2] = selectedLAB[2];
+                            centers[3] = selectedLAB[3];
+                            //alert("Calibration complete.");
+                            setTimeout(() => {
+
+                                ctx.filter = 'none';
+                                redrawAll();
+                                canvas.removeEventListener('click', handleCanvasClick); // Optional: remove handler
+                            }, 0);
+
+
+                        }
+                        clickStage++;
+                    }
+
+                    // Start the process
+                    alert("Click on the center of a blurred WHITE stone.");
+                    canvas.addEventListener('click', handleCanvasClick);
+                } else {
+
+                    ctx.filter = 'none';
+                    redrawAll();
+                }
+
+
             }, 0);
 
 
@@ -892,7 +942,7 @@ canvas.addEventListener('click', handleCanvasClick);
                 alert('Please click exactly 4 corners of the Go board.');
                 return;
             }
-            if (centers.length !== 3) {
+            if (centers.length < 3) {
                 alert('Please calibrate colors.');
                 return;
             }
