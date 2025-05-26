@@ -323,15 +323,15 @@
             };
             recognition.stop();
         }
-
-        //recognition.onend = function() {
-        //    if (isListening) {
-        //        // Restart recognition if it stopped unexpectedly
-        //        recognition.start();
-        //    }
-        //};
-        const voiceButton = document.getElementById('voiceButton');
         let isListening = false;
+        recognition.onend = function() {
+            if (isListening) {
+                // Restart recognition if it stopped unexpectedly
+                recognition.start();
+            }
+        };
+        const voiceButton = document.getElementById('voiceButton');
+
         voiceButton.addEventListener('click', () => {
             if (!isListening) {
                 isListening = true;
