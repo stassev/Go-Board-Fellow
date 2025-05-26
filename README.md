@@ -81,13 +81,14 @@ Other browsers work as well but may not support speech recognition. Note that "u
 Point your camera at the physical board and start the browser.
 
 1. Place a few stones of each color on the board to calibrate the colors (black, white, board color). Place some of the stones at the grid corners to calibrate the grid.
-2. Click the grid corners in the order specified below. To minimize perspective distortion issues, don't click on the grid itself, but rather on the centers of the 4 stones at the edges of the grid. The order of the grid coordinates that need to be clicked is:
+2. Take photo of board and lod it either by clicking Load Image or Take Photo.
+3. Click the grid corners in the order specified below. To minimize perspective distortion issues, don't click on the grid itself, but rather on the centers of the 4 stones at the edges of the grid. The order of the grid coordinates that need to be clicked is:
    - A19 for 19x19 boards
    - T19
    - T1
    - A1
-3. Adjust the positions of the calibration points so that they align with **stone centers**, not grid intersections. Those may not match due to perspective distortions.
-4. Click "Calibrate colors". This step should work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board. The automatic calibration works well for uniformly lit boards. If not, use manual calibration by deselecting the "Automatic calibration" checkbox.
+4. Adjust the positions of the calibration points so that they align with **stone centers**, not grid intersections. Those may not match due to perspective distortions.
+5. Click "Calibrate colors". This step should work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board. The automatic calibration works well for uniformly lit boards. If not, use manual calibration by deselecting the "Automatic calibration" checkbox.
 
 ---
 
