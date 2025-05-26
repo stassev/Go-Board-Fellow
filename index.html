@@ -170,10 +170,9 @@
         3.&nbsp; <input style="display:none;" type="file" id="imageUpload" accept="image/*">
         <label for="imageUpload" style="user-select: none;">
             Load Image
-        </label>&nbsp;or&nbsp;
-        choose &nbsp;
+        </label>&nbsp;&nbsp;or&nbsp;        choose &nbsp;
         <select id="cameraSelect"></select>
-        &nbsp;
+        &nbsp; and &nbsp;
         <button id="cameraButton">Take Photo</button>
         <!--span class="divider"></span-->
     </div>
@@ -189,7 +188,7 @@
     <div>
         6. Start GnuGo or KataGo backend using python scripts. See Readme.
     </div>
-    <h2>Generate next move: <button id="voiceButton">Activate 🎤 and say "Your turn" (triggers camera capture)</button> or
+    <h2>Generate next move: <button id="voiceButton">Activate 🎤 and say "Next" (triggers camera capture)</button> or
         <button id="processButton" disabled>Press this button</button>
     </h2>
     <h2>Save game state: <button id="downloadButton" disabled>Download SGF</button></h2>
@@ -304,7 +303,7 @@
                     if (event.results[i].isFinal) {
                         const transcript = event.results[i][0].transcript.trim().toLowerCase();
                         console.log('Heard:', transcript);
-                        if (transcript === "your turn") {
+                        if (transcript === "next") {
                             // Trigger the snapButton logic
                             if (!stream) {
                                 cameraButton.click();

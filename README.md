@@ -4,8 +4,8 @@ Author: Svetlin Tassev
 ## Overview  
 A web interface for playing Go on a physical board against a computer opponent (GnuGo/KataGo). Key features:  
 - **Board scanning** via camera/image upload  
-- **Perspective correction** using grid corner calibration  
-- **Voice commands** ("your turn" triggers move calculation)
+- **Stone detection**
+- **Voice commands** (Saying "Next" triggers move calculation)
 - **The calculated next turn is both printed and announced by audio**. Thus, one does not need to look at the screen to see the next move. 
 - **SGF export** -- saves the state of the board.
 
@@ -17,11 +17,14 @@ A web interface for playing Go on a physical board against a computer opponent (
 1. **Engines** (install one/both):  
    - **GnuGo**:  
      ```
-     sudo apt install gnugo  # Debian/Ubuntu
+     sudo pacman -S gnugo  # Archlinux/Manjaro
      ```
    - **KataGo**:  
      - Install KataGo: [Latest release](https://github.com/lightvector/KataGo/releases)
-     - Rename the [KataGo network](https://katagotraining.org/) of your choice to "kata1-strongest.bin.gz". For example:
+     ```
+     pamac install katago-cpu  # or other versions. This works on Manjaro
+     ```
+     - Download the [KataGo network](https://katagotraining.org/) of your choice and rename to "kata1-strongest.bin.gz". For example:
        ```
        mv kata1-b40c256-s11840935168-d3818872351.bin.gz kata1-strongest.bin.gz
        ```
@@ -40,27 +43,27 @@ A web interface for playing Go on a physical board against a computer opponent (
 ### **Start Backend** (run one of these scripts in terminal):
 For GnuGo
 
-    python gnugo_server.py
+       python gnugo_server.py
 
     
 For KataGo
 
-    python katago_server.py
+       python katago_server.py
 
 or 
 
-    python katago_server_weak.py
+       python katago_server_weak.py
 
 ### **Start Browser**
 
        chromium --allow-file-access-from-files --use-fake-ui-for-media-stream --test-type index.html
    
-   Other browsers work as well but may not support speech recognition. Note that "use-fake-ui-for-media-stream" is used if you are planning on using your phone as a camera.
+Other browsers work as well but may not support speech recognition. Note that "use-fake-ui-for-media-stream" is used if you are planning on using your phone as a camera.
 
 ### **Using Android phone as webcam (optional)**
 
 1. Connect phone with usb cable to computer.
-2. Execute (change parameters as needed):
+2. Execute (change parameters as needed; requires v4l2loopback module to be installed):
 
        sudo modprobe -r v4l2loopback
        sudo modprobe v4l2loopback devices=1 video_nr=2 card_label="Virtual_Webcam" exclusive_caps=1
@@ -77,16 +80,14 @@ or
 
 Point your camera at the physical board and start the browser.
 
-1. Click grid corners in clockwise order. For example: 
-   - Top-left (must match A19 for 19x19 boards)  
-   - Top-right (T19)  
-   - Bottom-right (T1)  
-   - Bottom-left (A1)
-2. Adjust the positions of the calibration points so that they align with **stone centers**, not grid intersections. Those may not match due to perspective distortions.
-3. Place a few stones of each color on the board to calibrate the colors (black, white, board color)
-4. Click "Calibrate colors". This step would work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board. The automatic calibration works well for uniformly lit boards. If not, use manual calibration by deselecting the "Automatic calibration" checkbox.
-
-
+1. Place a few stones of each color on the board to calibrate the colors (black, white, board color). Place some of the stones at the grid corners to calibrate the grid.
+2. Click the grid corners in the order specified below. To minimize perspective distortion issues, don't click on the grid itself, but rather on the centers of the 4 stones at the edges of the grid. The order of the grid coordinates that need to be clicked is:
+   - A19 for 19x19 boards
+   - T19
+   - T1
+   - A1
+3. Adjust the positions of the calibration points so that they align with **stone centers**, not grid intersections. Those may not match due to perspective distortions.
+4. Click "Calibrate colors". This step should work as long as the board color is not too bright/dark (so it's similar to the stone colors), and as long as there are no specular reflections from the board. The automatic calibration works well for uniformly lit boards. If not, use manual calibration by deselecting the "Automatic calibration" checkbox.
 
 ---
 
@@ -95,11 +96,11 @@ Point your camera at the physical board and start the browser.
 The steps below assume you have done the calibration in the previous step. Do not move the board or camera between turns.
 
 1. **Board Capture**. Pick one of the two:  
-- Live camera: Click "Take Photo" → "Capture" (Automatically triggered by speech recognition if you say "your turn")
+- Live camera: Click "Take Photo" → "Capture" (Automatically triggered by speech recognition if you say "Next")
 - Image upload: Use "Upload Image" button  
 
 2. **Move Calculation**:  
-- Automatic: Automatically triggered by speech recognition if you say "your turn"
+- Automatic: Automatically triggered by speech recognition if you say "Next"
 - Manual: Click "Process Image".
 
 3. **Next move**: It is printed out and is spoken by the webpage as long as you generate the audio files in a subfolder "audio".
@@ -117,7 +118,7 @@ The steps below assume you have done the calibration in the previous step. Do no
 ##  **Troubleshooting**:  
 - Speech recognition issues: Check browser microphone permissions.
 - Camera issues: Check browser camera permissions.
-- Detection errors: Readjust grid to match centers of stones, not grid. They may not perfectly align because of perspective distortions.
+- Detection errors: Readjust grid to match centers of stones, not grid. They may not perfectly align because of perspective distortions. If stones are not identified correctly, try manual color calibration.
 - Engine failures: Verify backend processes are running correctly.
 
 
