@@ -56,7 +56,7 @@ or
 
 ### **Start Browser**
 
-       chromium --allow-file-access-from-files --use-fake-ui-for-media-stream --test-type index.html
+       chromium --use-fake-ui-for-media-stream --test-type index.html
    
 Other browsers work as well but may not support speech recognition. Note that "use-fake-ui-for-media-stream" is used if you are planning on using your phone as a camera.
 
@@ -72,7 +72,7 @@ Other browsers work as well but may not support speech recognition. Note that "u
 3. Start phone camera.
 4. Start Chrome/Chromium with:
 
-       chromium --allow-file-access-from-files --use-fake-ui-for-media-stream --test-type index.html
+       chromium --use-fake-ui-for-media-stream --test-type index.html
        
 5. Select camera from browser from dropdown menu.
 
