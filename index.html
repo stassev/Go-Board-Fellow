@@ -511,10 +511,19 @@
 
             // Only allow 1 stone added
             if (added.length !== 1) {
-                sgf = createSGF(board);
-                prevBoard = cloneBoard(board);
-                console.warn("Invalid move: More than one stone added or removed. New SGF created.");
-                return sgf;
+                const shouldCreateNewSGF = window.confirm(
+                    "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? Or maybe check calibration."
+                );
+                if (shouldCreateNewSGF) {
+                    sgf = createSGF(board);
+                    prevBoard = cloneBoard(board);
+                    console.warn("New SGF created.");
+                    return sgf;
+                } else {
+                    board = cloneBoard(prevBoard);
+                    console.warn("SGF creation cancelled by user.");
+                    return sgf;
+                }
             }
 
             // Check for valid captures
@@ -547,10 +556,19 @@
             }
 
             if (!validCapture) {
-                sgf = createSGF(board);
-                prevBoard = cloneBoard(board);
-                console.warn("Invalid capture detected. New SGF created.");
-                return sgf;
+                const shouldCreateNewSGF = window.confirm(
+                    "Invalid capture detected.\nDo you want to create a new SGF? Or maybe check calibration."
+                );
+                if (shouldCreateNewSGF) {
+                    sgf = createSGF(board);
+                    prevBoard = cloneBoard(board);
+                    console.warn("New SGF created.");
+                    return sgf;
+                } else {
+                    board = cloneBoard(prevBoard);
+                    console.warn("SGF creation cancelled by user.");
+                    return sgf;
+                }
             }
 
             // Valid move, update SGF with the move
