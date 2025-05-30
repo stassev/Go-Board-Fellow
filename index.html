@@ -170,7 +170,7 @@
         3.&nbsp; <input style="display:none;" type="file" id="imageUpload" accept="image/*">
         <label for="imageUpload" style="user-select: none;">
             Load Image
-        </label>&nbsp;&nbsp;or&nbsp;        choose &nbsp;
+        </label>&nbsp;&nbsp;or&nbsp; choose &nbsp;
         <select id="cameraSelect"></select>
         &nbsp; and &nbsp;
         <button id="cameraButton">Take Photo</button>
@@ -450,9 +450,121 @@
             return minIndex;
         }
         var white, black;
+        // Global variables for previous board and SGF
+        let prevBoard = null;
 
+        function boardToKeySet(board) {
+            return new Set(Object.keys(board));
+        }
+
+        // Helper to deep copy a board object
+        function cloneBoard(board) {
+            return JSON.parse(JSON.stringify(board));
+        }
+
+        // Helper to get neighbors of a position
+        function getNeighbors(x, y, size) {
+            const neighbors = [];
+            if (x > 0) neighbors.push([x - 1, y]);
+            if (x < size - 1) neighbors.push([x + 1, y]);
+            if (y > 0) neighbors.push([x, y - 1]);
+            if (y < size - 1) neighbors.push([x, y + 1]);
+            return neighbors;
+        }
+
+        // Helper to check if a group has liberties
+        function hasLiberty(board, x, y, color, size, visited = new Set()) {
+            const key = `${x},${y}`;
+            //if (visited.has(key)) return false;
+            visited.add(key);
+            //console.log(JSON.stringify(visited))
+            //console.log(JSON.stringify(board))
+            for (const [nx, ny] of getNeighbors(x, y, size)) {
+                const nkey = `${nx},${ny}`;
+                if (board[nkey] == undefined) return true; // Found a liberty
+                if (board[nkey] === color && !visited.has(nkey)) {
+                    if (hasLiberty(board, nx, ny, color, size, visited)) return true;
+                }
+            }
+            return false;
+        }
+        var sgf = '';
+        // Main function
+        function updateSGF(board) {
+            if (!prevBoard) {
+                // First call, initialize SGF
+                sgf = createSGF(board);
+                prevBoard = cloneBoard(board);
+                console.warn("New SGF created: starting new game.");
+                return sgf;
+            }
+
+            // Find differences
+            const prevKeys = boardToKeySet(prevBoard);
+            const currKeys = boardToKeySet(board);
+
+            const added = [...currKeys].filter(k => !prevKeys.has(k));
+            const removed = [...prevKeys].filter(k => !currKeys.has(k));
+
+            if ((added.length == 0) && (removed.length == 0))
+                return sgf
+
+            // Only allow 1 stone added
+            if (added.length !== 1) {
+                sgf = createSGF(board);
+                prevBoard = cloneBoard(board);
+                console.warn("Invalid move: More than one stone added or removed. New SGF created.");
+                return sgf;
+            }
+
+            // Check for valid captures
+            let validCapture = true;
+            if (removed.length > 0) {
+                // All removed stones must be of the opposite color and must be captured by the new stone
+                //const [ax, ay] = added[0].split(',').map(Number);
+                const newStoneColor = board[added[0]];
+                const oppColor = newStoneColor === black ? white : black;
+
+                // Simulate the board before the move
+                let testBoard = cloneBoard(prevBoard);
+                testBoard[added[0]] = newStoneColor;
+
+                // Collect all captured stones
+                let actuallyCaptured = [];
+                for (const rem of removed) {
+                    const [rx, ry] = rem.split(',').map(Number);
+                    if (prevBoard[rem] !== oppColor) {
+                        validCapture = false;
+                        break;
+                    }
+                    // Check if this group has no liberties after the move
+                    if (!hasLiberty(testBoard, rx, ry, oppColor, boardSize)) {
+                        actuallyCaptured.push(rem);
+                    }
+                }
+                // All removed stones must have been captured
+                if (actuallyCaptured.length !== removed.length) validCapture = false;
+            }
+
+            if (!validCapture) {
+                sgf = createSGF(board);
+                prevBoard = cloneBoard(board);
+                console.warn("Invalid capture detected. New SGF created.");
+                return sgf;
+            }
+
+            // Valid move, update SGF with the move
+            const [x, y] = added[0].split(',').map(Number);
+            const coord = String.fromCharCode(97 + x) + String.fromCharCode(97 + y);
+            let move = board[added[0]] === black ? `;B[${coord}]` : `;W[${coord}]`;
+            // Remove trailing ')' and add the move
+            sgf = sgf.replace(/\)\s*$/, '') + move + ')';
+            prevBoard = cloneBoard(board);
+            return sgf;
+        }
+
+        // Your original createSGF function for reference
         function createSGF(board) {
-            //console.log(board)
             let sgf = "(;GM[1]FF[4]SZ[" + boardSize.toString() + "]\n";
             for (let key in board) {
                 let [x, y] = key.split(',').map(Number);
@@ -1014,7 +1126,7 @@
                 });
 
                 downloadButton.disabled = false;
-                const sgf = createSGF(boardState);
+                sgf = updateSGF(boardState);
                 fetch('http://localhost:5000/next-move', {
                         method: 'POST',
                         headers: {
@@ -1096,7 +1208,8 @@
         });
 
         downloadButton.addEventListener('click', () => {
-            const sgf = createSGF(boardState);
+
+            //const sgf = updateSGF(boardState);
             const blob = new Blob([sgf], {
                 type: 'text/plain'
             });
