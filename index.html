@@ -580,6 +580,48 @@
         }
         // = Math.max(image.width, image.height) / 600;
 
+        function updateBoardWithTurn(board, x, y, color, size) {
+            const key = `${x},${y}`;
+            // Place the stone
+            board[key] = color;
+            const oppColor = (color === black) ? white : black;
+            let toRemove = new Set();
+
+            // Check neighbors for captures
+            for (const [nx, ny] of getNeighbors(x, y, size)) {
+                const nkey = `${nx},${ny}`;
+                if (board[nkey] === oppColor) {
+                    // If neighbor group has no liberties after this move, mark all stones in the group for removal
+                    let visited = new Set();
+                    if (!hasLiberty(board, nx, ny, oppColor, size, visited)) {
+                        // Remove all stones in this group
+                        for (const stone of visited) {
+                            toRemove.add(stone);
+                        }
+                    }
+                }
+            }
+
+            // Remove captured stones
+            for (const rem of toRemove) {
+                delete board[rem];
+            }
+
+            // Check for suicide (if the placed stone/group has no liberties)
+            let visited = new Set();
+            if (!hasLiberty(board, x, y, color, size, visited)) {
+                // Suicide: remove the stone/group just placed
+                for (const stone of visited) {
+                    delete board[stone];
+                }
+            }
+
+            // Update SGF
+            sgf = updateSGF(board);
+            prevBoard = cloneBoard(board);
+            return sgf;
+        }
+
         imageUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
@@ -1197,6 +1239,9 @@
                                 ctx.arc(x, y, pointRadius * 1.7, 0, 2 * Math.PI);
                                 ctx.fillStyle = 'yellow';
                                 ctx.fill();
+                                setTimeout(() => {
+                                    updateBoardWithTurn(boardState, col, row, (Player === "Black" ? black : white), boardSize);
+                                }, 0)
                             }
                         }
                     })
