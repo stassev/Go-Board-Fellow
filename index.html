@@ -489,10 +489,12 @@
             return false;
         }
         var sgf = '';
+        var prevSgf = '';
         // Main function
         function updateSGF(board) {
             if (!prevBoard) {
                 // First call, initialize SGF
+                prevSgf = sgf;
                 sgf = createSGF(board);
                 prevBoard = cloneBoard(board);
                 console.warn("New SGF created: starting new game.");
@@ -515,12 +517,14 @@
                     "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? Or maybe check calibration."
                 );
                 if (shouldCreateNewSGF) {
+                    prevSgf = sgf;
                     sgf = createSGF(board);
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
                 } else {
-                    board = cloneBoard(prevBoard);
+                    //prevSgf = sgf;
+                    boardState = cloneBoard(prevBoard);
                     console.warn("SGF creation cancelled by user.");
                     return sgf;
                 }
@@ -565,7 +569,8 @@
                     console.warn("New SGF created.");
                     return sgf;
                 } else {
-                    board = cloneBoard(prevBoard);
+                    boardState = cloneBoard(prevBoard);
+
                     console.warn("SGF creation cancelled by user.");
                     return sgf;
                 }
@@ -601,6 +606,7 @@
         function updateBoardWithTurn(board, x, y, color, size) {
             const key = `${x},${y}`;
             // Place the stone
+            prevBoard = cloneBoard(board);
             board[key] = color;
             const oppColor = (color === black) ? white : black;
             let toRemove = new Set();
