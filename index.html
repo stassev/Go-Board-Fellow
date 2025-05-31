@@ -454,6 +454,7 @@
         let prevBoard = null;
         let prevPrevBoard = null;
         let prevSGF = '';
+        let prevPrevSGF = '';
 
         function boardToKeySet(board) {
             return new Set(Object.keys(board));
@@ -497,9 +498,11 @@
             if (!prevBoard) {
                 // First call, initialize SGF
                 //prevSgf = sgf;
+                prevPrevSGF = '';
+                prevSGF = '';
                 sgf = createSGF(board);
                 //if (updatePrevPrev)
-                prevPrevBoard = '';
+                prevPrevBoard = null;
                 prevBoard = cloneBoard(board);
                 console.warn("New SGF created: starting new game.");
                 return sgf;
@@ -524,9 +527,11 @@
                 );
                 if (shouldCreateNewSGF) {
                     //prevSgf = sgf;
+                    prevPrevSGF = '';
+                    prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
-                    prevPrevBoard = '';
+                    prevPrevBoard = null;
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
@@ -534,6 +539,7 @@
                     //prevSgf = sgf;
                     boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
+                    prevSGF = prevPrevSGF;
                     return prevSGF;
                 }
             }
@@ -553,9 +559,11 @@
                 );
                 if (shouldCreateNewSGF) {
                     //prevSgf = sgf;
+                    prevPrevSGF = '';
+                    prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
-                    prevPrevBoard = '';
+                    prevPrevBoard = null;
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
@@ -563,6 +571,7 @@
                     //prevSgf = sgf;
                     boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
+                    prevSGF = prevPrevSGF;
                     return prevSGF;
                 }
             }
@@ -601,15 +610,17 @@
                     "Invalid capture detected.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
+                    prevPrevSGF = '';
+                    prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
-                    prevPrevBoard = '';
+                    prevPrevBoard = null;
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
                 } else {
                     boardState = cloneBoard(prevPrevBoard);
-
+                    prevSGF = prevPrevSGF;
                     console.warn("SGF creation cancelled by user.");
                     return prevSGF;
                 }
@@ -620,6 +631,8 @@
             const coord = String.fromCharCode(97 + x) + String.fromCharCode(97 + y);
             let move = board[added[0]] === black ? `;B[${coord}]` : `;W[${coord}]`;
             // Remove trailing ')' and add the move
+            prevPrevSGF = prevSGF;
+            prevSGF = sgf;
             sgf = sgf.replace(/\)\s*$/, '') + move + ')';
             //if (updatePrevPrev)
             prevPrevBoard = cloneBoard(prevBoard);
@@ -647,6 +660,7 @@
         function updateBoardWithTurn(board, x, y, color, size) {
             const key = `${x},${y}`;
             // Place the stone
+            prevPrevSGF = prevSGF;
             prevSGF = sgf;
             prevPrevBoard = cloneBoard(board);
             prevBoard = cloneBoard(board);
@@ -1236,7 +1250,11 @@
 
                 downloadButton.disabled = false;
                 sgf = updateSGF(boardState);
-
+                console.log(JSON.stringify({
+                    sgf,
+                    color: Player,
+                    strength: strength
+                }))
                 fetch('http://localhost:5000/next-move', {
                         method: 'POST',
                         headers: {
