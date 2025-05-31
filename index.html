@@ -452,6 +452,8 @@
         var white, black;
         // Global variables for previous board and SGF
         let prevBoard = null;
+        let prevPrevBoard = null;
+        let prevSGF = '';
 
         function boardToKeySet(board) {
             return new Set(Object.keys(board));
@@ -543,9 +545,10 @@
                     return sgf;
                 } else {
                     //prevSgf = sgf;
-                    boardState = cloneBoard(prevBoard);
+                    boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
-                    return sgf;
+                    return prevSGF;
+
                 }
             }
 
@@ -588,10 +591,10 @@
                     console.warn("New SGF created.");
                     return sgf;
                 } else {
-                    boardState = cloneBoard(prevBoard);
+                    boardState = cloneBoard(prevPrevBoard);
 
                     console.warn("SGF creation cancelled by user.");
-                    return sgf;
+                    return prevSGF;
                 }
             }
 
@@ -625,6 +628,8 @@
         function updateBoardWithTurn(board, x, y, color, size) {
             const key = `${x},${y}`;
             // Place the stone
+            prevSGF = sgf;
+            prevPrevBoard = cloneBoard(board);
             prevBoard = cloneBoard(board);
             board[key] = color;
             const oppColor = (color === black) ? white : black;
@@ -1212,6 +1217,7 @@
 
                 downloadButton.disabled = false;
                 sgf = updateSGF(boardState);
+
                 fetch('http://localhost:5000/next-move', {
                         method: 'POST',
                         headers: {
@@ -1297,7 +1303,6 @@
 
         downloadButton.addEventListener('click', () => {
 
-            //const sgf = updateSGF(boardState);
             const blob = new Blob([sgf], {
                 type: 'text/plain'
             });
