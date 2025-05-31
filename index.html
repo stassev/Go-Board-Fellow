@@ -501,6 +501,26 @@
                 return sgf;
             }
 
+            const overlappingKeys = [...prevKeys].filter(k => currKeys.has(k));
+
+            // Check that the values of overlapping keys are the same
+            let allMatch = true;
+            for (const key of overlappingKeys) {
+                if (board[key] !== prevBoard[key]) {
+                    //console.warn(`Value mismatch at key ${key}: board=${board[key]}, prevBoard=${prevBoard[key]}`);
+                    allMatch = false;
+                    break
+                }
+            }
+            if (!allMatch) {
+                // First call, initialize SGF
+                prevSgf = sgf;
+                sgf = createSGF(board);
+                prevBoard = cloneBoard(board);
+                console.warn("New SGF created: starting new game.");
+                return sgf;
+            }
+
             // Find differences
             const prevKeys = boardToKeySet(prevBoard);
             const currKeys = boardToKeySet(board);
