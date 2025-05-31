@@ -500,7 +500,9 @@
                 console.warn("New SGF created: starting new game.");
                 return sgf;
             }
-
+            // Find differences
+            const prevKeys = boardToKeySet(prevBoard);
+            const currKeys = boardToKeySet(board);
             const overlappingKeys = [...prevKeys].filter(k => currKeys.has(k));
 
             // Check that the values of overlapping keys are the same
@@ -520,9 +522,7 @@
                 return sgf;
             }
 
-            // Find differences
-            const prevKeys = boardToKeySet(prevBoard);
-            const currKeys = boardToKeySet(board);
+
 
             const added = [...currKeys].filter(k => !prevKeys.has(k));
             const removed = [...prevKeys].filter(k => !currKeys.has(k));
