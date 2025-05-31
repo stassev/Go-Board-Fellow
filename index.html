@@ -454,7 +454,6 @@
         let prevBoard = null;
         let prevPrevBoard = null;
         let prevSGF = '';
-        let prevPrevSGF = '';
 
         function boardToKeySet(board) {
             return new Set(Object.keys(board));
@@ -498,8 +497,6 @@
             if (!prevBoard) {
                 // First call, initialize SGF
                 //prevSgf = sgf;
-                prevPrevSGF = '';
-                prevSGF = '';
                 sgf = createSGF(board);
                 //if (updatePrevPrev)
                 prevPrevBoard = null;
@@ -523,11 +520,10 @@
             }
             if (!allMatch) {
                 const shouldCreateNewSGF = window.confirm(
-                    "Invalid move: Stone colors do not match the previous move in the game.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
+                    "Invalid move: Stone colors do not match the previous move in the game.\nDo you want to create a new SGF? If not, rewind game and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
                     //prevSgf = sgf;
-                    prevPrevSGF = '';
                     prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
@@ -539,7 +535,6 @@
                     //prevSgf = sgf;
                     boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
-                    prevSGF = prevPrevSGF;
                     return prevSGF;
                 }
             }
@@ -555,11 +550,10 @@
             // Only allow 1 stone added
             if (added.length !== 1) {
                 const shouldCreateNewSGF = window.confirm(
-                    "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
+                    "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? If not, rewind game and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
                     //prevSgf = sgf;
-                    prevPrevSGF = '';
                     prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
@@ -571,7 +565,6 @@
                     //prevSgf = sgf;
                     boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
-                    prevSGF = prevPrevSGF;
                     return prevSGF;
                 }
             }
@@ -607,10 +600,9 @@
 
             if (!validCapture) {
                 const shouldCreateNewSGF = window.confirm(
-                    "Invalid capture detected.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
+                    "Invalid capture detected.\nDo you want to create a new SGF? If not, rewind game and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
-                    prevPrevSGF = '';
                     prevSGF = '';
                     sgf = createSGF(board);
                     //if (updatePrevPrev)
@@ -620,7 +612,6 @@
                     return sgf;
                 } else {
                     boardState = cloneBoard(prevPrevBoard);
-                    prevSGF = prevPrevSGF;
                     console.warn("SGF creation cancelled by user.");
                     return prevSGF;
                 }
@@ -631,11 +622,10 @@
             const coord = String.fromCharCode(97 + x) + String.fromCharCode(97 + y);
             let move = board[added[0]] === black ? `;B[${coord}]` : `;W[${coord}]`;
             // Remove trailing ')' and add the move
-            prevPrevSGF = prevSGF;
-            prevSGF = sgf;
+            //prevSGF = sgf;
             sgf = sgf.replace(/\)\s*$/, '') + move + ')';
             //if (updatePrevPrev)
-            prevPrevBoard = cloneBoard(prevBoard);
+            //prevPrevBoard = cloneBoard(prevBoard);
             prevBoard = cloneBoard(board);
             return sgf;
         }
@@ -660,7 +650,7 @@
         function updateBoardWithTurn(board, x, y, color, size) {
             const key = `${x},${y}`;
             // Place the stone
-            prevPrevSGF = prevSGF;
+            //prevPrevSGF = prevSGF;
             prevSGF = sgf;
             prevPrevBoard = cloneBoard(board);
             prevBoard = cloneBoard(board);
