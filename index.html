@@ -489,12 +489,12 @@
             return false;
         }
         var sgf = '';
-        var prevSgf = '';
+        //var prevSgf = '';
         // Main function
         function updateSGF(board) {
             if (!prevBoard) {
                 // First call, initialize SGF
-                prevSgf = sgf;
+                //prevSgf = sgf;
                 sgf = createSGF(board);
                 prevBoard = cloneBoard(board);
                 console.warn("New SGF created: starting new game.");
@@ -514,7 +514,6 @@
             }
             if (!allMatch) {
                 // First call, initialize SGF
-                prevSgf = sgf;
                 sgf = createSGF(board);
                 prevBoard = cloneBoard(board);
                 console.warn("New SGF created: starting new game.");
@@ -537,7 +536,7 @@
                     "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? Or maybe check calibration."
                 );
                 if (shouldCreateNewSGF) {
-                    prevSgf = sgf;
+                    //prevSgf = sgf;
                     sgf = createSGF(board);
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
