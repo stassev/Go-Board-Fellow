@@ -75,14 +75,16 @@ def next_move():
             moves.append(('w', stone))
     
     # Add mainline moves (B and W)
-    node = root
-    while node:
+    node=root
+    # Mainline moves (B and W)
+    for node in sgf_game.main_sequence_iter():
+        if node == root:
+            continue
         if node.has_property('B'):
             moves.append(('b', node.get('B')))
         elif node.has_property('W'):
             moves.append(('w', node.get('W')))
-        node = node.next()
-    
+
     katago_cmd = [
         'katago', 'gtp',
         '-model', './kata1-stongest.bin.gz',

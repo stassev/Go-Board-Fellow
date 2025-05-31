@@ -148,12 +148,14 @@ def next_move():
     
     # Add mainline moves (B and W)
     node = root
-    while node:
+    for node in sgf_game.main_sequence_iter():
+        if node == root:
+            continue
         if node.has_property('B'):
             moves.append(('b', node.get('B')))
         elif node.has_property('W'):
             moves.append(('w', node.get('W')))
-        node = node.next()
+        #node = node.next()
     
     # Ensure the last move is the opposite color of what we want to play
     #print(moves)
