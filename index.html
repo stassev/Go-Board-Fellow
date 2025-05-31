@@ -498,6 +498,8 @@
                 // First call, initialize SGF
                 //prevSgf = sgf;
                 sgf = createSGF(board);
+                //if (updatePrevPrev)
+                prevPrevBoard = '';
                 prevBoard = cloneBoard(board);
                 console.warn("New SGF created: starting new game.");
                 return sgf;
@@ -517,11 +519,23 @@
                 }
             }
             if (!allMatch) {
-                // First call, initialize SGF
-                sgf = createSGF(board);
-                prevBoard = cloneBoard(board);
-                console.warn("New SGF created: starting new game.");
-                return sgf;
+                const shouldCreateNewSGF = window.confirm(
+                    "Invalid move: Stone colors do not match the previous move in the game.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
+                );
+                if (shouldCreateNewSGF) {
+                    //prevSgf = sgf;
+                    sgf = createSGF(board);
+                    //if (updatePrevPrev)
+                    prevPrevBoard = '';
+                    prevBoard = cloneBoard(board);
+                    console.warn("New SGF created.");
+                    return sgf;
+                } else {
+                    //prevSgf = sgf;
+                    boardState = cloneBoard(prevPrevBoard);
+                    console.warn("SGF creation cancelled by user.");
+                    return prevSGF;
+                }
             }
 
 
@@ -535,11 +549,13 @@
             // Only allow 1 stone added
             if (added.length !== 1) {
                 const shouldCreateNewSGF = window.confirm(
-                    "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? Or maybe check calibration."
+                    "Invalid move: More than one stone added or removed.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
                     //prevSgf = sgf;
                     sgf = createSGF(board);
+                    //if (updatePrevPrev)
+                    prevPrevBoard = '';
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
@@ -548,7 +564,6 @@
                     boardState = cloneBoard(prevPrevBoard);
                     console.warn("SGF creation cancelled by user.");
                     return prevSGF;
-
                 }
             }
 
@@ -583,10 +598,12 @@
 
             if (!validCapture) {
                 const shouldCreateNewSGF = window.confirm(
-                    "Invalid capture detected.\nDo you want to create a new SGF? Or maybe check calibration."
+                    "Invalid capture detected.\nDo you want to create a new SGF? If not, rewind two moves and check calibration and stone placement."
                 );
                 if (shouldCreateNewSGF) {
                     sgf = createSGF(board);
+                    //if (updatePrevPrev)
+                    prevPrevBoard = '';
                     prevBoard = cloneBoard(board);
                     console.warn("New SGF created.");
                     return sgf;
@@ -604,6 +621,8 @@
             let move = board[added[0]] === black ? `;B[${coord}]` : `;W[${coord}]`;
             // Remove trailing ')' and add the move
             sgf = sgf.replace(/\)\s*$/, '') + move + ')';
+            //if (updatePrevPrev)
+            prevPrevBoard = cloneBoard(prevBoard);
             prevBoard = cloneBoard(board);
             return sgf;
         }
@@ -1242,7 +1261,7 @@
                                 const resignAudio = new Audio(`audio/resign.wav`);
                                 resignAudio.play();
                             }
-                            if (nextMove === "PASS") {
+                            if (nextMove === "PASS" || nextMove === "pass") {
                                 const passAudio = new Audio(`audio/pass.wav`);
                                 passAudio.play();
                             }
