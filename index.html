@@ -143,7 +143,7 @@
             width: fit-content;
         }
 
-        canvas {
+        #goBoard {
             background: #eacda3;
             background: linear-gradient(to right, #eacda3, #d6ae7b);
             border-radius: 8px;
@@ -236,7 +236,7 @@
         <canvas id="goBoard" width="400" height="400"></canvas>
         <div class="controls">
             <button id="prevMove">← Back</button>
-            <button id="nextMove">Forward →</button>
+            <button id="forwMove">Forward →</button>
         </div>
     </div>
 
@@ -1502,7 +1502,7 @@
             }
         });
 
-        document.getElementById('nextMove').addEventListener('click', () => {
+        document.getElementById('forwMove').addEventListener('click', () => {
             const data = parseSGF(sgf);
             if (currentMove < data.moves.length) {
                 currentMove++;
