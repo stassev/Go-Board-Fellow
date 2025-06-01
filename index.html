@@ -137,6 +137,37 @@
             margin: 0 6px;
             vertical-align: middle;
         }
+
+        .board-container {
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        canvas {
+            background: #eacda3;
+            background: linear-gradient(to right, #eacda3, #d6ae7b);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        button {
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
     </style>
 </head>
 
@@ -201,10 +232,19 @@
     </div>
     <h2>Next move: <span id="nextMove"></span></h2>
     <canvas id="canvas" width="800" height="800"></canvas>
-
+    <div class="board-container">
+        <canvas id="goBoard" width="400" height="400"></canvas>
+        <div class="controls">
+            <button id="prevMove">← Back</button>
+            <button id="nextMove">Forward →</button>
+        </div>
+    </div>
 
     <script src="homography.js"></script>
     <script>
+        let moves = [];
+        let currentMove = 0;
+
         var lastclick = 3;
         var clickStage = lastclick; // 0: waiting for white, 1: waiting for black, 2: done
         let calibrateManual = !document.getElementById('autoCalibrateCheckbox').checked;
@@ -493,6 +533,34 @@
         var sgf = '';
         //var prevSgf = '';
         // Main function
+        function updateSGFdrawing(sgf) {
+            //sgf = updateSGF0(board)
+            const data = parseSGF(sgf);
+            let tmpBoardState = {};
+            // Apply setup stones
+            for (const coord of data.setup.black) {
+                const [x, y] = sgfCoordToXY(coord, boardSize);
+                tmpBoardState[`${x},${y}`] = black;
+            }
+            for (const coord of data.setup.white) {
+                const [x, y] = sgfCoordToXY(coord, boardSize);
+                tmpBoardState[`${x},${y}`] = white;
+            }
+
+            // Replay moves up to currentMove, applying captures
+            for (let i = 0; i < currentMove; i++) {
+                const move = data.moves[i];
+                if (!move) continue;
+                const [x, y] = sgfCoordToXY(move.coord, boardSize);
+                const color = move.color === 'W' ? white : black;
+                updateBoardWithTurn(tmpBoardState, x, y, color, boardSize);
+            }
+
+            renderBoard();
+            return sgf
+        }
+
+
         function updateSGF(board) {
             if (!prevBoard) {
                 // First call, initialize SGF
@@ -1240,6 +1308,8 @@
 
                 downloadButton.disabled = false;
                 sgf = updateSGF(boardState);
+                currentMove = parseSGF(sgf).moves.length;
+                updateSGFdrawing(sgf);
                 console.log(JSON.stringify({
                     sgf,
                     color: Player,
@@ -1317,6 +1387,8 @@
                                 ctx.fill();
                                 setTimeout(() => {
                                     updateBoardWithTurn(boardState, col, row, (Player === "Black" ? black : white), boardSize);
+                                    currentMove = parseSGF(sgf).moves.length;
+                                    updateSGFdrawing(sgf);
                                 }, 0)
                             }
                         }
@@ -1337,6 +1409,104 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'board.sgf';
             link.click();
+        });
+
+
+
+        function parseSGF(sgf) {
+            let setupStones = {
+                black: [],
+                white: []
+            };
+            let moveList = [];
+            let parts = sgf.split(/;(?![^\[]*\])/);
+            for (let part of parts) {
+                part = part.trim();
+                if (part.startsWith('AW')) {
+                    let matches = part.match(/AW\[([a-z]{2})\]/g);
+                    if (matches) matches.forEach(m => setupStones.white.push(m.slice(3, 5)));
+                } else if (part.startsWith('AB')) {
+                    let matches = part.match(/AB\[([a-z]{2})\]/g);
+                    if (matches) matches.forEach(m => setupStones.black.push(m.slice(3, 5)));
+                } else if (part.startsWith('W[') || part.startsWith('B[')) {
+                    let color = part[0];
+                    let coord = part.slice(2, 4);
+                    if (coord && coord[0] >= 'a' && coord[0] <= 'z') {
+                        moveList.push({
+                            color: color,
+                            coord: coord
+                        });
+                    }
+                }
+            }
+            return {
+                setup: setupStones,
+                moves: moveList
+            };
+        }
+
+        function sgfCoordToXY(coord, size) {
+            const x = coord.charCodeAt(0) - 'a'.charCodeAt(0);
+            const y = coord.charCodeAt(1) - 'a'.charCodeAt(0);
+            return [x, y];
+        }
+
+        function renderBoard() {
+            let canvas = document.getElementById('goBoard');
+            let ctx = canvas.getContext('2d');
+            let size = canvas.width;
+            let cellSize = size / (boardSize + 1);
+            let stoneRadius = cellSize * 0.45;
+
+            ctx.clearRect(0, 0, size, size);
+
+            // Draw grid
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < boardSize; i++) {
+                let pos = (i + 1) * cellSize;
+                ctx.beginPath();
+                ctx.moveTo(cellSize, pos);
+                ctx.lineTo(size - cellSize, pos);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pos, cellSize);
+                ctx.lineTo(pos, size - cellSize);
+                ctx.stroke();
+            }
+
+            // Draw stones from boardState
+            for (const [key, color] of Object.entries(boardState)) {
+                const [x, y] = key.split(',').map(Number);
+                drawStone(ctx, x, y, color, cellSize, stoneRadius);
+            }
+        }
+
+        function drawStone(ctx, x, y, color, cellSize, radius) {
+            let centerX = (x + 1) * cellSize;
+            let centerY = (y + 1) * cellSize;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.fillStyle = color === black ? '#222' : '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#888';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        document.getElementById('prevMove').addEventListener('click', () => {
+            if (currentMove > 0) {
+                currentMove--;
+                updateSGFdrawing(sgf);
+            }
+        });
+
+        document.getElementById('nextMove').addEventListener('click', () => {
+            const data = parseSGF(sgf);
+            if (currentMove < data.moves.length) {
+                currentMove++;
+                updateSGFdrawing(sgf);
+            }
         });
     </script>
 </body>
