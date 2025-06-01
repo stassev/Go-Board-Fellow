@@ -554,11 +554,11 @@
                 if (!move) continue;
                 const [x, y] = sgfCoordToXY(move.coord, boardSize);
                 const color = move.color === 'W' ? white : black;
-                updateBoardWithTurn(tmpBoardState, x, y, color, boardSize);
+                updateBoardWithTurn(tmpBoardState, x, y, color, boardSize, update = false);
             }
 
             renderBoard(tmpBoardState);
-            return sgf
+            //return sgf
         }
 
 
@@ -716,13 +716,15 @@
         }
         // = Math.max(image.width, image.height) / 600;
 
-        function updateBoardWithTurn(board, x, y, color, size) {
+        function updateBoardWithTurn(board, x, y, color, size, update = true) {
             const key = `${x},${y}`;
             // Place the stone
             //prevPrevSGF = prevSGF;
-            prevSGF = sgf;
-            prevPrevBoard = cloneBoard(board);
-            prevBoard = cloneBoard(board);
+            if (update) {
+                prevSGF = sgf;
+                prevPrevBoard = cloneBoard(board);
+                prevBoard = cloneBoard(board);
+            }
             board[key] = color;
             const oppColor = (color === black) ? white : black;
             let toRemove = new Set();
@@ -757,9 +759,10 @@
             }
 
             // Update SGF
-            sgf = updateSGF(board);
+            if (update)
+                sgf = updateSGF(board);
             //prevBoard = cloneBoard(board);
-            return sgf;
+            //return sgf;
         }
 
         imageUpload.addEventListener('change', (e) => {
