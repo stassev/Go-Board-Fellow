@@ -536,6 +536,7 @@
         function updateSGFdrawing(sgf) {
             //sgf = updateSGF0(board)
             const data = parseSGF(sgf);
+            console.log(JSON.stringify(data))
             let tmpBoardState = {};
             // Apply setup stones
             for (const coord of data.setup.black) {
@@ -556,7 +557,7 @@
                 updateBoardWithTurn(tmpBoardState, x, y, color, boardSize);
             }
 
-            renderBoard();
+            renderBoard(tmpBoardState);
             return sgf
         }
 
@@ -1419,7 +1420,7 @@
                 white: []
             };
             let moveList = [];
-            let parts = sgf.split(/;(?![^\[]*\])/);
+            let parts = sgf.split(/[;\n](?![^\[]*\])/);
             for (let part of parts) {
                 part = part.trim();
                 if (part.startsWith('AW')) {
@@ -1451,7 +1452,7 @@
             return [x, y];
         }
 
-        function renderBoard() {
+        function renderBoard(boardState) {
             let canvas = document.getElementById('goBoard');
             let ctx = canvas.getContext('2d');
             let size = canvas.width;
