@@ -22,8 +22,6 @@
     <meta charset="UTF-8">
     <title>Go Board Fellow</title>
     <style>
-        
-
         #controls {
             /*padding: 2px; No background or border, just your original padding */
 
@@ -137,36 +135,40 @@
         }
 
         .canvas-row {
-    display: flex;
-    align-items: top; /* Vertically centers children */
-    width: 100vw;        /* Full viewport width */
-    
-}
+            display: flex;
+            align-items: top;
+            /* Vertically centers children */
+            width: 100vw;
+            /* Full viewport width */
 
-#canvas {
-    width:40wv;
-    height: auto;         /* Adjust as needed */
-    border: 1px solid black;
-    display: block;
-}
+        }
 
-.board-container {
-    width: 20vw;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 0;
-}
+        #canvas {
+            width: 40wv;
+            height: auto;
+            /* Adjust as needed */
+            border: 1px solid black;
+            display: block;
+        }
 
-#goBoard {
-    width: 100%;
-    height: auto;         /* Adjust as needed */
-    background: linear-gradient(to right, #eacda3, #d6ae7b);
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    border: 1px solid black;
-    display: block;
-}
+        .board-container {
+            width: 20vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+        }
+
+        #goBoard {
+            width: 100%;
+            height: auto;
+            /* Adjust as needed */
+            background: linear-gradient(to right, #eacda3, #d6ae7b);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid black;
+            display: block;
+        }
 
         .controls {
             text-align: center;
@@ -251,14 +253,14 @@
     <h2>Next move: <span id="nextMove"></span></h2>
     <div class="canvas-row">
 
-    <canvas id="canvas" width="800" height="800"></canvas>
-    <div class="board-container">
-        <canvas id="goBoard" width="400" height="400"></canvas>
-        <div class="controls">
-            <button id="prevMove">← Back</button>
-            <button id="forwMove">Forward →</button>
+        <canvas id="canvas" width="800" height="800"></canvas>
+        <div class="board-container">
+            <canvas id="goBoard" width="400" height="400"></canvas>
+            <div class="controls">
+                <button id="prevMove">← Back</button>
+                <button id="forwMove">Forward →</button>
+            </div>
         </div>
-    </div>
 
     </div>
 
@@ -797,31 +799,31 @@
                         //canvas.width = image.width;
                         //canvas.height = image.height;
                         const maxWidth = window.innerWidth * 0.8;
-        let drawWidth = image.width;
-        let drawHeight = image.height;
+                        let drawWidth = image.width;
+                        let drawHeight = image.height;
 
-        // Scale down if the image is too wide
-        if (image.width > maxWidth) {
-            drawWidth = maxWidth;
-            drawHeight = (image.height / image.width) * drawWidth;
-        }
+                        // Scale down if the image is too wide
+                        if (image.width > maxWidth) {
+                            drawWidth = maxWidth;
+                            drawHeight = (image.height / image.width) * drawWidth;
+                        }
 
-        // Resize the canvas to the scaled size
-        canvas.width = drawWidth;
-        canvas.height = drawHeight;
+                        // Resize the canvas to the scaled size
+                        canvas.width = drawWidth;
+                        canvas.height = drawHeight;
 
-        // Draw the scaled image onto the canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0, drawWidth, drawHeight);
+                        // Draw the scaled image onto the canvas
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(image, 0, 0, drawWidth, drawHeight);
 
-        // Overwrite image variable with the rescaled image from the canvas
-        const newImage = new window.Image();
-        newImage.onload = () => {
-            image = newImage; // Now image is the rescaled version
-            processButton.disabled = false;
-            redrawAll();
-        };
-        newImage.src = canvas.toDataURL();
+                        // Overwrite image variable with the rescaled image from the canvas
+                        const newImage = new window.Image();
+                        newImage.onload = () => {
+                            image = newImage; // Now image is the rescaled version
+                            processButton.disabled = false;
+                            redrawAll();
+                        };
+                        newImage.src = canvas.toDataURL();
                         //blurRadius = Math.max(image.width, image.height) / 200;
 
                         // Calculate blur radius as image size / 100 (use the larger of width or height)
@@ -930,11 +932,23 @@
 
         // Snap button event
         snapButton.addEventListener('click', () => {
-            const width = video.videoWidth;
-            const height = video.videoHeight;
+            // Get the native video dimensions
+            let width = video.videoWidth;
+            let height = video.videoHeight;
+
+            // Calculate the max allowed width in pixels (80vw)
+            const maxWidth = window.innerWidth * 0.8;
+
+            // Scale down if needed, maintaining aspect ratio
+            if (width > maxWidth) {
+                height = height * (maxWidth / width);
+                width = maxWidth;
+            }
+
+            // Set canvas to the scaled size
             canvas.width = width;
             canvas.height = height;
-            //const blurRadius = Math.max(width, height) / 200;
+
             ctx.save();
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.drawImage(video, 0, 0, width, height);
@@ -944,8 +958,14 @@
             video.style.display = 'none';
             snapButton.style.display = 'none';
             processButton.disabled = false;
-            image.src = canvas.toDataURL();
-            redrawAll();
+
+            // Overwrite the global image variable with the rescaled image
+            const newImage = new window.Image();
+            newImage.onload = () => {
+                image = newImage; // Now image is the rescaled version
+                redrawAll();
+            };
+            newImage.src = canvas.toDataURL();
         });
 
         function generateLines(n = boardSize) {
