@@ -259,6 +259,8 @@
             <div class="controls">
                 <button id="prevMove">← Back</button>
                 <button id="forwMove">Forward →</button>
+                <button id="rotateBoard">Rotate/Flip</button>
+
             </div>
         </div>
 
@@ -267,6 +269,8 @@
 
     <script src="homography.js"></script>
     <script>
+        let orientation = 0; // 0-7: 0=0°, 1=90°, 2=180°, 3=270°, 4=flip, 5=flip+90°, etc.
+
         let moves = [];
         let currentMove = 0;
 
@@ -335,7 +339,20 @@
         var centers = [];
         let stream = null;
         var boardSize = parseInt(document.getElementById('board-size').value, 10);
+function transformCoords(x, y, boardSize, orientation) {
+    // 0: 0°, 1: 90°, 2: 180°, 3: 270°
+    // 4: flip, 5: flip+90°, 6: flip+180°, 7: flip+270°
+    let n = boardSize - 1;
+    let flip = orientation >= 4;
+    let rot = orientation % 4;
 
+    if (flip) y = n - y;
+
+    for (let i = 0; i < rot; i++) {
+        [x, y] = [y, n - x];
+    }
+    return [x, y];
+}
         // Listen for changes
         document.getElementById('board-size').addEventListener('change', function() {
             boardSize = parseInt(this.value, 10);
@@ -1553,7 +1570,8 @@ drawStarPoints(ctx, boardSize, cellSize);
             // Draw stones from boardState
             for (const [key, color] of Object.entries(boardState)) {
                 const [x, y] = key.split(',').map(Number);
-                drawStone(ctx, x, y, color, cellSize, stoneRadius);
+                const [tx, ty] = transformCoords(x, y, boardSize, orientation);
+drawStone(ctx, tx, ty, color, cellSize, stoneRadius);
             }
         }
 
@@ -1600,6 +1618,10 @@ drawStarPoints(ctx, boardSize, cellSize);
                 updateSGFdrawing(sgf);
             }
         });
+        document.getElementById('rotateBoard').addEventListener('click', () => {
+    orientation = (orientation + 1) % 8;
+    updateSGFdrawing(sgf);
+});
     </script>
 </body>
 
