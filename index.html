@@ -1548,6 +1548,7 @@
                 ctx.lineTo(pos, size - cellSize);
                 ctx.stroke();
             }
+drawStarPoints(ctx, boardSize, cellSize);
 
             // Draw stones from boardState
             for (const [key, color] of Object.entries(boardState)) {
@@ -1567,6 +1568,23 @@
             ctx.lineWidth = 1;
             ctx.stroke();
         }
+        function drawStarPoints(ctx, boardSize, cellSize) {
+    // Standard star point positions for common board sizes
+    let hoshi = [];
+    if (boardSize === 19) hoshi = [3, 9, 15];
+    else if (boardSize === 13) hoshi = [3, 6, 9];
+    else if (boardSize === 9) hoshi = [2, 4, 6];
+    else return; // No star points for other sizes
+
+    ctx.fillStyle = "#222";
+    hoshi.forEach(x => {
+        hoshi.forEach(y => {
+            ctx.beginPath();
+            ctx.arc((x + 1) * cellSize, (y + 1) * cellSize, cellSize * 0.12, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+    });
+}
 
         document.getElementById('prevMove').addEventListener('click', () => {
             if (currentMove > 0) {
