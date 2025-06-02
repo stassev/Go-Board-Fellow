@@ -22,9 +22,7 @@
     <meta charset="UTF-8">
     <title>Go Board Fellow</title>
     <style>
-        canvas {
-            border: 1px solid black;
-        }
+        
 
         #controls {
             /*padding: 2px; No background or border, just your original padding */
@@ -138,17 +136,37 @@
             vertical-align: middle;
         }
 
-        .board-container {
-            margin: 0 auto;
-            width: fit-content;
-        }
+        .canvas-row {
+    display: flex;
+    align-items: top; /* Vertically centers children */
+    width: 100vw;        /* Full viewport width */
+    
+}
 
-        #goBoard {
-            background: #eacda3;
-            background: linear-gradient(to right, #eacda3, #d6ae7b);
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+#canvas {
+    width:40wv;
+    height: auto;         /* Adjust as needed */
+    border: 1px solid black;
+    display: block;
+}
+
+.board-container {
+    width: 20vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+}
+
+#goBoard {
+    width: 100%;
+    height: auto;         /* Adjust as needed */
+    background: linear-gradient(to right, #eacda3, #d6ae7b);
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 1px solid black;
+    display: block;
+}
 
         .controls {
             text-align: center;
@@ -231,6 +249,8 @@
         <button id="snapButton" style="display:none;">Capture</button>
     </div>
     <h2>Next move: <span id="nextMove"></span></h2>
+    <div class="canvas-row">
+
     <canvas id="canvas" width="800" height="800"></canvas>
     <div class="board-container">
         <canvas id="goBoard" width="400" height="400"></canvas>
@@ -239,6 +259,9 @@
             <button id="forwMove">Forward →</button>
         </div>
     </div>
+
+    </div>
+
 
     <script src="homography.js"></script>
     <script>
@@ -771,8 +794,34 @@
                 const reader = new FileReader();
                 reader.onload = (evt) => {
                     image.onload = () => {
-                        canvas.width = image.width;
-                        canvas.height = image.height;
+                        //canvas.width = image.width;
+                        //canvas.height = image.height;
+                        const maxWidth = window.innerWidth * 0.8;
+        let drawWidth = image.width;
+        let drawHeight = image.height;
+
+        // Scale down if the image is too wide
+        if (image.width > maxWidth) {
+            drawWidth = maxWidth;
+            drawHeight = (image.height / image.width) * drawWidth;
+        }
+
+        // Resize the canvas to the scaled size
+        canvas.width = drawWidth;
+        canvas.height = drawHeight;
+
+        // Draw the scaled image onto the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, drawWidth, drawHeight);
+
+        // Overwrite image variable with the rescaled image from the canvas
+        const newImage = new window.Image();
+        newImage.onload = () => {
+            image = newImage; // Now image is the rescaled version
+            processButton.disabled = false;
+            redrawAll();
+        };
+        newImage.src = canvas.toDataURL();
                         //blurRadius = Math.max(image.width, image.height) / 200;
 
                         // Calculate blur radius as image size / 100 (use the larger of width or height)
