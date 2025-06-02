@@ -1458,8 +1458,9 @@
                                 ctx.arc(x, y, pointRadius * 1.7, 0, 2 * Math.PI);
                                 ctx.fillStyle = 'yellow';
                                 ctx.fill();
+                                //console.log(Player, (Player.toLowerCase() === "black" ? black : white),black,white)
                                 setTimeout(() => {
-                                    updateBoardWithTurn(boardState, col, row, (Player === "Black" ? black : white), boardSize);
+                                    updateBoardWithTurn(boardState, col, row, (Player.toLowerCase() === "black" ? black : white), boardSize);
                                     currentMove = parseSGF(sgf).moves.length;
                                     updateSGFdrawing(sgf);
                                 }, 0)
