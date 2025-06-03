@@ -270,7 +270,7 @@
     <script src="homography.js"></script>
     <script>
         let orientation = 0; // 0-7: 0=0°, 1=90°, 2=180°, 3=270°, 4=flip, 5=flip+90°, etc.
-
+        let process = false;
         let moves = [];
         let currentMove = 0;
 
@@ -339,20 +339,21 @@
         var centers = [];
         let stream = null;
         var boardSize = parseInt(document.getElementById('board-size').value, 10);
-function transformCoords(x, y, boardSize, orientation) {
-    // 0: 0°, 1: 90°, 2: 180°, 3: 270°
-    // 4: flip, 5: flip+90°, 6: flip+180°, 7: flip+270°
-    let n = boardSize - 1;
-    let flip = orientation >= 4;
-    let rot = orientation % 4;
 
-    if (flip) y = n - y;
+        function transformCoords(x, y, boardSize, orientation) {
+            // 0: 0°, 1: 90°, 2: 180°, 3: 270°
+            // 4: flip, 5: flip+90°, 6: flip+180°, 7: flip+270°
+            let n = boardSize - 1;
+            let flip = orientation >= 4;
+            let rot = orientation % 4;
 
-    for (let i = 0; i < rot; i++) {
-        [x, y] = [y, n - x];
-    }
-    return [x, y];
-}
+            if (flip) y = n - y;
+
+            for (let i = 0; i < rot; i++) {
+                [x, y] = [y, n - x];
+            }
+            return [x, y];
+        }
         // Listen for changes
         document.getElementById('board-size').addEventListener('change', function() {
             boardSize = parseInt(this.value, 10);
@@ -392,11 +393,9 @@ function transformCoords(x, y, boardSize, orientation) {
                             }
 
                             setTimeout(() => {
+                                process = true;
                                 snapButton.click();
-                                setTimeout(() => {
-                                    processButton.disabled = false;
-                                    processButton.click();
-                                }, 0)
+
                             }, 0)
                         }
                     }
@@ -981,8 +980,16 @@ function transformCoords(x, y, boardSize, orientation) {
             newImage.onload = () => {
                 image = newImage; // Now image is the rescaled version
                 redrawAll();
+                if (process) {
+
+                    processButton.disabled = false;
+                    processButton.click();
+                    process = false;
+
+                }
             };
             newImage.src = canvas.toDataURL();
+
         });
 
         function generateLines(n = boardSize) {
@@ -1565,13 +1572,13 @@ function transformCoords(x, y, boardSize, orientation) {
                 ctx.lineTo(pos, size - cellSize);
                 ctx.stroke();
             }
-drawStarPoints(ctx, boardSize, cellSize);
+            drawStarPoints(ctx, boardSize, cellSize);
 
             // Draw stones from boardState
             for (const [key, color] of Object.entries(boardState)) {
                 const [x, y] = key.split(',').map(Number);
                 const [tx, ty] = transformCoords(x, y, boardSize, orientation);
-drawStone(ctx, tx, ty, color, cellSize, stoneRadius);
+                drawStone(ctx, tx, ty, color, cellSize, stoneRadius);
             }
         }
 
@@ -1586,23 +1593,24 @@ drawStone(ctx, tx, ty, color, cellSize, stoneRadius);
             ctx.lineWidth = 1;
             ctx.stroke();
         }
-        function drawStarPoints(ctx, boardSize, cellSize) {
-    // Standard star point positions for common board sizes
-    let hoshi = [];
-    if (boardSize === 19) hoshi = [3, 9, 15];
-    else if (boardSize === 13) hoshi = [3, 6, 9];
-    else if (boardSize === 9) hoshi = [2, 4, 6];
-    else return; // No star points for other sizes
 
-    ctx.fillStyle = "#222";
-    hoshi.forEach(x => {
-        hoshi.forEach(y => {
-            ctx.beginPath();
-            ctx.arc((x + 1) * cellSize, (y + 1) * cellSize, cellSize * 0.12, 0, 2 * Math.PI);
-            ctx.fill();
-        });
-    });
-}
+        function drawStarPoints(ctx, boardSize, cellSize) {
+            // Standard star point positions for common board sizes
+            let hoshi = [];
+            if (boardSize === 19) hoshi = [3, 9, 15];
+            else if (boardSize === 13) hoshi = [3, 6, 9];
+            else if (boardSize === 9) hoshi = [2, 4, 6];
+            else return; // No star points for other sizes
+
+            ctx.fillStyle = "#222";
+            hoshi.forEach(x => {
+                hoshi.forEach(y => {
+                    ctx.beginPath();
+                    ctx.arc((x + 1) * cellSize, (y + 1) * cellSize, cellSize * 0.12, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            });
+        }
 
         document.getElementById('prevMove').addEventListener('click', () => {
             if (currentMove > 0) {
@@ -1619,9 +1627,9 @@ drawStone(ctx, tx, ty, color, cellSize, stoneRadius);
             }
         });
         document.getElementById('rotateBoard').addEventListener('click', () => {
-    orientation = (orientation + 1) % 8;
-    updateSGFdrawing(sgf);
-});
+            orientation = (orientation + 1) % 8;
+            updateSGFdrawing(sgf);
+        });
     </script>
 </body>
 
