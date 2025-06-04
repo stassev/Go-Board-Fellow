@@ -127,7 +127,8 @@ The steps below assume you have done the calibration in the previous step. Do no
 ## Screenshots:
  - This game was played live. Recording was done by my laptop camera.
 
-![play_go](https://github.com/user-attachments/assets/9d6f1953-e20d-4cfe-b55e-a26713be790f)
+![play_go1](https://github.com/user-attachments/assets/0a8da466-f542-429c-92b8-dba48646abae)
+
 
  - The original image is from wikipedia. I ran the code on it.
   
